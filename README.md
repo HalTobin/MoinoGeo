@@ -9,6 +9,7 @@ A lightweight, offline-first mobile library providing world regions, countries, 
 ## Features
 
 * **Comprehensive Data:** Access structured information on world regions, countries, states/provinces, and over 150,000 cities.
+* **Multi-Language Support:** Offline localization across multiple languages (`en`, `fr`, `es`, `it`, `de`, `uk`, `ru`).
 * **UI-Ready Flags:** Bundled SVG country flags mapped seamlessly via standard ISO codes.
 * **Map Boundaries:** Lightweight TopoJSON polygon data for rendering accurate country shapes and borders on a map.
 * **Offline-First:** Zero network calls or API keys required. Everything is pre-bundled and optimized for mobile performance.
@@ -29,7 +30,17 @@ A lightweight, offline-first mobile library providing world regions, countries, 
 
 ## Documentation
 
-For detailed installation guides, data schemas, code snippets, and API usage, please refer to the [Technical Documentation](./docs/README.md).
+For detailed installation guides, data schemas, localization strategy, and API usage, refer to the [Documentation Hub](./docs/README.md):
+
+*  [Architecture & Design](./docs/architecture.md)
+* ️ [Data Schema & ERD](./docs/schema.md)
+*  [Localization Guide](./docs/localization.md)
+*  [Vector Flags Guide](./docs/flags.md)
+* ️ [TopoJSON Map Boundaries](./docs/maps.md)
+*  [Android Integration](./docs/integration-android.md)
+*  [Apple (iOS/macOS) Integration](./docs/integration-apple.md)
+*  [Licensing & Compliance](./docs/licensing.md)
+* ️ [Maintenance & Scripts](./docs/maintenance.md)
 
 ---
 
