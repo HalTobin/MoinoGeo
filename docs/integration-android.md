@@ -1,32 +1,48 @@
 # Android Integration Guide
 
-This guide details how to integrate MoinoGeo into Android applications using Kotlin, Gradle, and Android Room Persistence Library.
+This guide details how to integrate MoinoGeo into Android applications using Kotlin, Gradle, Jetpack Compose, and Android Room.
+
+MoinoGeo is designed to be **fully modular**. You can integrate core database queries, vector SVG flags, and TopoJSON map boundaries together or selectively as independent components.
 
 ---
 
-## 1. Directory Layout & Asset Setup
+## 1. Directory Layout & Modular Asset Options
 
-Place the pre-compiled database and assets into `app/src/main/assets/`:
+Place pre-compiled database assets in `app/src/main/assets/`. You can include all assets or omit any unneeded directory to minimize APK size:
 
 ```
 app/src/main/
 └── assets/
     ├── databases/
-    │   └── moinogeo.db
+    │   └── moinogeo.db       [Core Module - 12.5 MB] (Optional)
     ├── geo/
-    │   └── world-50m.topojson
+    │   └── world-50m.topojson [Maps Module - 2.1 MB]   (Optional)
     └── flags/
-        ├── us.svg
+        ├── us.svg            [Flags Module - 1.8 MB]  (Optional: swap or omit)
         ├── de.svg
-        ├── fr.svg
         └── ...
+```
+
+### Selective Asset Stripping in `build.gradle.kts`
+If integrating via an AAR/library module that includes all assets by default, you can strip unneeded assets in your app's Gradle file:
+
+```kotlin
+// app/build.gradle.kts
+android {
+    // Exclude flags or map boundaries if not needed in your app build
+    androidResources {
+        noCompress += "db"
+        noCompress += "topojson"
+        // ignoreAssetsPattern = "!*.svg" // Example: ignore flag assets if supplying custom artwork
+    }
+}
 ```
 
 ---
 
-## 2. Room Database Setup
+## 2. Core Database Setup (Room)
 
-Pre-populate Android Room database from bundled `assets/databases/moinogeo.db`:
+Pre-populate Android Room database from bundled `assets/databases/moinogeo.db`. The core database runs independently without flags or maps:
 
 ```kotlin
 import android.content.Context
@@ -68,7 +84,45 @@ abstract class MoinoGeoDatabase : RoomDatabase() {
 
 ---
 
-## 3. Query Examples with DAOs
+## 3. Custom Flag Asset Provider Setup
+
+To use MoinoGeo's flag rendering core with custom artwork or alternative asset locations:
+
+```kotlin
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import coil.compose.AsyncImage
+
+// Abstract Provider
+fun interface FlagAssetProvider {
+    fun getFlagData(iso2Code: String): Any
+}
+
+// Custom Provider pointing to custom flag SVGs (e.g. custom directory, drawable res, or remote CDN)
+class CustomFlagProvider(private val customBaseUrl: String) : FlagAssetProvider {
+    override fun getFlagData(iso2Code: String): Any {
+        return "$customBaseUrl/${iso2Code.lowercase()}.svg"
+    }
+}
+
+// Usage in Jetpack Compose
+@Composable
+fun CustomFlagIcon(
+    iso2Code: String,
+    modifier: Modifier = Modifier,
+    provider: FlagAssetProvider = CustomFlagProvider("https://cdn.example.com/flags")
+) {
+    AsyncImage(
+        model = provider.getFlagData(iso2Code),
+        contentDescription = "Flag for $iso2Code",
+        modifier = modifier
+    )
+}
+```
+
+---
+
+## 4. Query Examples with DAOs
 
 ### CountryDao & CityDao Definitions
 ```kotlin

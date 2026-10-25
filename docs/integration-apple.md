@@ -2,11 +2,13 @@
 
 This guide details how to integrate MoinoGeo into iOS and macOS applications using Swift Package Manager (SPM), Swift, and SQLite3 / GRDB.
 
+MoinoGeo targets are **fully modular**. You can link core database logic, vector SVG flags, and TopoJSON map boundaries together or as independent, decoupled SPM targets.
+
 ---
 
-## 1. Swift Package Manager Setup
+## 1. Swift Package Manager Setup (Modular Targets)
 
-Bundling MoinoGeo assets (`moinogeo.db`, `world-50m.topojson`, and SVG flags) in `Package.swift`:
+Modular `Package.swift` allowing developers to import specific targets (`MoinoGeoCore`, `MoinoGeoFlags`, `MoinoGeoMaps`) or the complete `MoinoGeo` umbrella package:
 
 ```swift
 // Package.swift
@@ -19,16 +21,33 @@ let package = Package(
         .macOS(.v12)
     ],
     products: [
-        .library(name: "MoinoGeo", targets: ["MoinoGeo"])
+        // Umbrella library including all features
+        .library(name: "MoinoGeo", targets: ["MoinoGeo"]),
+        // Fine-grained modular libraries for specific binary footprint needs
+        .library(name: "MoinoGeoCore", targets: ["MoinoGeoCore"]),
+        .library(name: "MoinoGeoFlags", targets: ["MoinoGeoFlags"]),
+        .library(name: "MoinoGeoMaps", targets: ["MoinoGeoMaps"])
     ],
     targets: [
+        // Core SQLite database & query engine
+        .target(
+            name: "MoinoGeoCore",
+            resources: [.copy("Resources/moinogeo.db")]
+        ),
+        // Vector SVG flag components & default assets
+        .target(
+            name: "MoinoGeoFlags",
+            resources: [.copy("Resources/flags")]
+        ),
+        // TopoJSON map boundaries & polygon decoders
+        .target(
+            name: "MoinoGeoMaps",
+            resources: [.copy("Resources/world-50m.topojson")]
+        ),
+        // Umbrella target wrapping core, flags, and maps
         .target(
             name: "MoinoGeo",
-            resources: [
-                .copy("Resources/moinogeo.db"),
-                .copy("Resources/world-50m.topojson"),
-                .copy("Resources/flags")
-            ]
+            dependencies: ["MoinoGeoCore", "MoinoGeoFlags", "MoinoGeoMaps"]
         )
     ]
 )
@@ -36,13 +55,14 @@ let package = Package(
 
 ---
 
-## 2. Bundle Resource Access Helper
+## 2. Bundle Resource Access & Custom Provider Interfaces
 
-Ensure asset loaders resolve file URLs correctly via `Bundle.module` (for SPM) or target bundle:
+Ensure asset loaders resolve file URLs correctly or allow custom asset providers for flags and map boundaries:
 
 ```swift
 import Foundation
 
+// Core Bundle Helper
 public final class MoinoGeoBundle {
     public static var bundle: Bundle {
         #if SWIFT_PACKAGE
@@ -64,13 +84,36 @@ public final class MoinoGeoBundle {
         bundle.url(forResource: iso2.lowercased(), withExtension: "svg", subdirectory: "flags")
     }
 }
+
+// Abstract Flag Provider Protocol
+public protocol FlagProvider {
+    func flagURL(for iso2Code: String) -> URL?
+}
+
+// Default Flag Provider
+public struct DefaultFlagProvider: FlagProvider {
+    public init() {}
+    public func flagURL(for iso2Code: String) -> URL? {
+        MoinoGeoBundle.flagURL(for: iso2Code)
+    }
+}
+
+// Custom Flag Provider (e.g. custom directory URL or bundle)
+public struct CustomFlagProvider: FlagProvider {
+    private let customDirectoryURL: URL
+    public init(customDirectoryURL: URL) { self.customDirectoryURL = customDirectoryURL }
+    
+    public func flagURL(for iso2Code: String) -> URL? {
+        customDirectoryURL.appendingPathComponent("\(iso2Code.lowercased()).svg")
+    }
+}
 ```
 
 ---
 
 ## 3. Query Engine Example (SQLite3 C-API)
 
-Querying `moinogeo.db` in Swift with multi-language fallback support:
+Querying `moinogeo.db` in Swift independently from flags and map boundaries:
 
 ```swift
 import Foundation
