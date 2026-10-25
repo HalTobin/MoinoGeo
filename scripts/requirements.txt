@@ -1,0 +1,4 @@
+# MoinoGeo Script Dependencies (Optional for higher performance topojson conversion)
+# Standard library is used by default for build_database.py and optimize_flags.py.
+
+topojson>=1.5.0
