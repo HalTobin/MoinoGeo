@@ -1,35 +1,38 @@
 # Vector SVG Country Flags Extension Guide
 
-As part of MoinoGeo's mobile platform wrapper, vector country flags are provided as an **optional visual extension module** for ISO 3166-1 alpha-2 country records. Vectors provide lossless scaling on high-DPI mobile screens while maintaining a minimal asset footprint (~1.8 MB total).
+Country flags are provided as an **optional visual extension** with a **swappable icon-set architecture**. Rather than locking applications into a single aesthetic, MoinoGeo separates the flag engine into a lightweight core abstraction (`kotlin/flags`) and multiple independent icon-set modules (`flags-lipis`, `flags-flagpack`, `flags-circle`).
 
-The flag module is **completely unbundlable and abstractable**. Apps that do not render flag icons can omit the `flags/` directory to save ~1.8 MB, and apps requiring custom visual aesthetics can provide **custom flag artwork** on top of MoinoGeo's Kotlin/Swift flag components.
+Apps can easily swap between different icon sets by changing a dependency, or supply completely custom artwork.
 
 ---
 
-## 1. Modular Visual Extension & Custom Art Overriding
-
-For aesthetic, branding, or geopolitical/legal compliance reasons, developers may need to customize flag artwork, supply alternative flag designs (e.g., circular flags, waving flags, 3D flags), or use a proprietary flag set.
-
-MoinoGeo decouples its Kotlin/Swift flag UI components from the default bundled SVG assets via an abstract **Asset Provider** protocol/interface.
+## 1. Swappable Icon-Set Architecture
 
 ```
-+-----------------------------------------------------------------------+
-|                    MoinoGeo Flag UI Extension                         |
-+-----------------------------------------------------------------------+
-                                   |
-                  +----------------+----------------+
-                  v                                 v
-   +------------------------------+  +------------------------------+
-   | Default Asset Provider       |  | Custom Flag Asset Provider   |
-   | - Resolves bundled SVGs      |  | - Resolves custom asset directory|
-   |   (e.g., assets/flags/us.svg)|  | - Resolves remote CDN URLs    |
-   |                              |  | - Resolves alternative artwork|
-   +------------------------------+  +------------------------------+
++-------------------------------------------------------------------------------+
+|                      Flags Core (kotlin/flags)                                |
+|  - FlagAssetProvider (interface)                                              |
+|  - FlagIcon (Compose Multiplatform composable with Coil SVG decoder)          |
+|  - Bundles NO assets (< 50 KB)                                                |
++-------------------------------------------------------------------------------+
+                                       |
+        +------------------------------+------------------------------+
+        |                              |                              |
+        v                              v                              v
++-----------------------+      +-----------------------+      +-----------------------+
+|   flags-lipis         |      |   flags-flagpack      |      |   flags-circle        |
+| - lipis/flag-icons    |      | - flagpack-core       |      | - circle-flags        |
+| - Rectangular 4x3/1x1 |      | - Stylized rounded    |      | - Circular 1x1        |
+| - ~1.8 MB             |      | - ~1.5 MB             |      | - ~1.6 MB             |
++-----------------------+      +-----------------------+      +-----------------------+
 ```
 
-### Key Modularity Capabilities:
-1. **Omit Flag Vectors:** Strip the `flags/` directory from assets if your app does not display flags, saving ~1.8 MB binary size.
-2. **Custom Artwork Injection:** Implement `FlagAssetProvider` (Kotlin) or `FlagProvider` (Swift) to redirect asset loading to custom paths, local bundles, or custom vector repositories while retaining MoinoGeo's native mobile UI components.
+### Supported Icon Sets Out of the Box:
+1. **`lipis/flag-icons` (`kotlin/flags-lipis`)**: Standard realistic rectangular (4×3 and 1×1) SVG country flags.
+2. **`flagpack-core` by Yummygum (`kotlin/flags-flagpack`)**: Stylized, modern rounded-corner flag icons ideal for UI dropdowns and lists.
+3. **`circle-flags` by HatScripts (`kotlin/flags-circle`)**: Circular 1×1 flag icons designed specifically for avatars, badges, and user profile UIs.
+
+Developers can also implement `FlagAssetProvider` directly to supply their own local SVGs, vector drawables, or remote CDN URLs.
 
 ---
 
@@ -37,7 +40,7 @@ MoinoGeo decouples its Kotlin/Swift flag UI components from the default bundled 
 
 - **Format:** SVG (Scalable Vector Graphics).
 - **Naming Convention:** Lowercase ISO 3166-1 alpha-2 code (e.g., `us.svg`, `de.svg`, `jp.svg`, `fr.svg`, `ua.svg`).
-- **Optimization Strategy:** Minified via `scripts/optimize_flags.py` using SVGO rules:
+- **Optimization Strategy:** Minified via `scripts/optimize_flags.py`:
   - Removal of XML metadata, comments, doctypes, and hidden elements.
   - Coordinate precision reduction.
   - Stripping redundant formatting whitespace.
@@ -45,57 +48,65 @@ MoinoGeo decouples its Kotlin/Swift flag UI components from the default bundled 
 
 ---
 
-## 3. Android Jetpack Compose Integration
-
-Render bundled SVG flags or custom flag art in Jetpack Compose using Coil with `SvgDecoder` and abstract asset resolution.
+## 3. Kotlin / Compose Multiplatform Integration
 
 ### Abstract Flag Asset Provider (Kotlin)
 
 ```kotlin
-// Abstract interface for resolving flag image model/data
+package com.moinofactory.moinogeo.flags
+
+// Core interface in kotlin/flags
 fun interface FlagAssetProvider {
-    fun getFlagData(iso2Code: String): Any // Returns File, URL, Asset Path, or Drawable Res ID
+    fun getFlagData(iso2Code: String): Any // Returns File, URL, Asset Path, or ImageModel
+}
+```
+
+### Implementations in Icon-Set Modules
+
+```kotlin
+// In kotlin/flags-lipis
+class LipisFlagAssetProvider(private val basePath: String = "file:///android_asset/flags-lipis") : FlagAssetProvider {
+    override fun getFlagData(iso2Code: String): Any = "$basePath/${iso2Code.lowercase()}.svg"
 }
 
-// Default implementation loading bundled assets
-class DefaultAssetFlagProvider(private val assetSubdirectory: String = "flags") : FlagAssetProvider {
-    override fun getFlagData(iso2Code: String): Any {
-        return "file:///android_asset/$assetSubdirectory/${iso2Code.lowercase()}.svg"
-    }
+// In kotlin/flags-flagpack
+class FlagpackAssetProvider(private val basePath: String = "file:///android_asset/flags-flagpack") : FlagAssetProvider {
+    override fun getFlagData(iso2Code: String): Any = "$basePath/${iso2Code.lowercase()}.svg"
 }
 
-// Custom implementation loading custom artwork (e.g. custom directory or remote CDN)
-class CustomArtFlagProvider(private val baseUrl: String) : FlagAssetProvider {
-    override fun getFlagData(iso2Code: String): Any {
-        return "$baseUrl/${iso2Code.lowercase()}-custom.svg"
-    }
+// In kotlin/flags-circle
+class CircleFlagAssetProvider(private val basePath: String = "file:///android_asset/flags-circle") : FlagAssetProvider {
+    override fun getFlagData(iso2Code: String): Any = "$basePath/${iso2Code.lowercase()}.svg"
+}
+
+// Custom CDN provider
+class CdnFlagAssetProvider(private val baseUrl: String) : FlagAssetProvider {
+    override fun getFlagData(iso2Code: String): Any = "$baseUrl/${iso2Code.lowercase()}.svg"
 }
 ```
 
 ### Composable Flag Component
+
 ```kotlin
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import coil.compose.AsyncImage
-import coil.decode.SvgDecoder
-import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalPlatformContext
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.svg.SvgDecoder
 
 @Composable
-fun ComposableFlagIcon(
+fun FlagIcon(
     iso2Code: String,
-    contentDescription: String,
     modifier: Modifier = Modifier,
-    provider: FlagAssetProvider = DefaultAssetFlagProvider()
+    provider: FlagAssetProvider,
+    contentDescription: String? = "Flag of $iso2Code"
 ) {
-    val context = LocalContext.current
-    val flagModel = provider.getFlagData(iso2Code)
-
+    val context = LocalPlatformContext.current
     AsyncImage(
         model = ImageRequest.Builder(context)
-            .data(flagModel)
+            .data(provider.getFlagData(iso2Code))
             .decoderFactory(SvgDecoder.Factory())
-            .crossfade(true)
             .build(),
         contentDescription = contentDescription,
         modifier = modifier
@@ -105,73 +116,6 @@ fun ComposableFlagIcon(
 
 ---
 
-## 4. iOS & macOS SwiftUI Integration
+## 4. iOS & macOS SwiftUI Integration (Planned / Deferred)
 
-Render bundled SVG vector flags or custom flag art in SwiftUI using modular `FlagProvider`.
-
-### Abstract Flag Provider Protocol (Swift)
-
-```swift
-import Foundation
-
-public protocol FlagProvider {
-    func flagURL(for iso2Code: String) -> URL?
-}
-
-// Default provider targeting bundled resources
-public struct DefaultFlagProvider: FlagProvider {
-    public init() {}
-    public func flagURL(for iso2Code: String) -> URL? {
-        MoinoGeoBundle.flagURL(for: iso2Code)
-    }
-}
-
-// Custom provider loading custom artwork from a custom bundle or local path
-public struct CustomDirectoryFlagProvider: FlagProvider {
-    private let directoryURL: URL
-
-    public init(directoryURL: URL) {
-        self.directoryURL = directoryURL
-    }
-
-    public func flagURL(for iso2Code: String) -> URL? {
-        directoryURL.appendingPathComponent("\(iso2Code.lowercased()).svg")
-    }
-}
-```
-
-### SwiftUI SVG Flag Component
-```swift
-import SwiftUI
-import WebKit
-
-public struct SVGFlagView: UIViewRepresentable {
-    public let iso2Code: String
-    public let provider: FlagProvider
-
-    public init(iso2Code: String, provider: FlagProvider = DefaultFlagProvider()) {
-        self.iso2Code = iso2Code
-        self.provider = provider
-    }
-
-    public func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.isScrollEnabled = false
-        return webView
-    }
-
-    public func updateUIView(_ uiView: WKWebView, context: Context) {
-        guard let url = provider.flagURL(for: iso2Code),
-              let svgData = try? Data(contentsOf: url) else { return }
-
-        uiView.load(
-            svgData,
-            mimeType: "image/svg+xml",
-            characterEncodingName: "UTF-8",
-            baseURL: url.deletingLastPathComponent()
-        )
-    }
-}
-```
+*(Swift implementation is planned for a later phase; the architecture will mirror the Kotlin provider pattern using a Swift `FlagProvider` protocol and SwiftUI `FlagView`.)*

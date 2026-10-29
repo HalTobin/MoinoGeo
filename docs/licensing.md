@@ -1,15 +1,17 @@
 # Licensing & Commercial Compliance
 
-MoinoGeo combines three high-quality open-source datasets. Each dataset retains its respective upstream license.
+MoinoGeo integrates open-source datasets and icon libraries. Each upstream component retains its respective license.
 
 ---
 
-## 1. Data Attribution Table
+## 1. Data & Asset Attribution Table
 
 | Asset Type | Source Project | Upstream Repository / Source | License | Usage in MoinoGeo |
 | :--- | :--- | :--- | :--- | :--- |
-| **Relational Geographic Data** | Countries States Cities Database | [`dr5hn/countries-states-cities-database`](https://github.com/dr5hn/countries-states-cities-database) | **ODbL v1.0** (Open Database License) | Pre-processed into SQLite database schema (`moinogeo.db`). |
-| **Vector Country Flags** | Flag Icons | [`lipis/flag-icons`](https://github.com/lipis/flag-icons) | **MIT License** | Minified SVG files keyed by lowercase ISO 3166-1 alpha-2 codes. |
+| **Relational Geographic Data** | Countries States Cities Database | [`dr5hn/countries-states-cities-database`](https://github.com/dr5hn/countries-states-cities-database) | **ODbL v1.0** (Open Database License) | Stored raw in `data/`, compiled into SQLite database schema (`moinogeo.db`). |
+| **Vector Flags: Rectangular** | Flag Icons | [`lipis/flag-icons`](https://github.com/lipis/flag-icons) | **MIT License** | Processed into `moinogeo-flags-lipis` module. |
+| **Vector Flags: Rounded** | Flagpack Core | [`Yummygum/flagpack-core`](https://github.com/Yummygum/flagpack-core) | **MIT License** | Processed into `moinogeo-flags-flagpack` module. |
+| **Vector Flags: Circular** | Circle Flags | [`HatScripts/circle-flags`](https://github.com/HatScripts/circle-flags) | **MIT License** | Processed into `moinogeo-flags-circle` module. |
 | **Vector Map Boundaries** | Natural Earth | [`naturalearthdata.com`](https://www.naturalearthdata.com/) | **CC0 1.0 Universal** (Public Domain) | Quantized TopoJSON vector polygons (`world-50m.topojson`). |
 
 ---

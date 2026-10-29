@@ -1,8 +1,8 @@
 # Architecture & Design Philosophy
 
-MoinoGeo is an offline-first geographic library engineered as a **high-performance, Kotlin- and Swift-optimized wrapper for mobile platforms**.
+MoinoGeo is an offline-first geographic library engineered as a **high-performance mobile platform wrapper**. The current core focus is on **Android / Compose Multiplatform (CMP)** with native Room and Kotlin bindings; native Apple / Swift implementation (`darwin/`) is planned for a subsequent development phase.
 
-Rather than acting as a generic database provider or a standalone media library, MoinoGeo wraps geographic datasets (countries, states, cities, localizations) into a clean, platform-native API for Android and Apple platforms. To keep mobile binary size lean and give developers full control over visual presentation, MoinoGeo decouples its visual assets (vector flags and map border polygons) into **optional visual extension modules**.
+Rather than acting as a generic database provider or a standalone media library, MoinoGeo wraps geographic datasets (countries, states, cities, localizations) into a clean, platform-native API. To keep mobile binary size lean and give developers full control over visual presentation, MoinoGeo decouples its visual assets (vector flags and map border polygons) into **optional visual extension modules** with **swappable icon sets**.
 
 ---
 
@@ -12,9 +12,9 @@ Rather than acting as a generic database provider or a standalone media library,
 +-----------------------------------------------------------------------------------+
 |                                MoinoGeo Client                                    |
 +-----------------------------------------------------------------------------------+
-|   iOS / macOS (Swift)                            Android (Kotlin)                 |
-|   - Swift Package Manager                        - Gradle Modules / AARs          |
-|   - SQLite3 / GRDB / SwiftData                   - Room / SQLite / Driver         |
+|   Android / Compose Multiplatform (Kotlin)       Apple iOS / macOS (Deferred)     |
+|   - Room / SQLite / Driver                       - Swift Package Manager          |
+|   - Jetpack Compose / CMP                        - SQLite3 / GRDB (Planned)       |
 +-----------------------------------------------------------------------------------+
                                           |
                       +-------------------+-------------------+
@@ -28,15 +28,19 @@ Rather than acting as a generic database provider or a standalone media library,
           +-----------------------+              /                         \
                       |                         v                           v
                       |              +--------------------+       +--------------------+
-                      |              |  Vector Flags      |       |  Map Boundaries    |
-                      |              | - Pluggable Asset  |       | - TopoJSON Decoder |
-                      |              |   Provider         |       | - Pluggable        |
+                      |              |  Flags Core        |       |  Map Boundaries    |
+                      |              | - FlagAssetProvider|       | - TopoJSON Decoder |
+                      |              | - FlagIcon View    |       | - Pluggable        |
                       |              +--------------------+       |   Boundary Provider|
-                      |                         |                 +--------------------+
-                      |                         v                           |
-                      v               [Custom SVG Flag Art]                 v
-             [moinogeo.db SQLite]     (Default or User-Provided)  [Custom TopoJSON Asset]
-                                                                 (Default or User-Provided)
+                      |                  /      |      \          +--------------------+
+                      |                 /       |       \                   |
+                      |                v        v        v                  v
+                      |          +----------+ +-------+ +--------+ [Custom TopoJSON]
+                      |          |  lipis   | |flagpack| | circle | (Default or User)
+                      |          +----------+ +-------+ +--------+
+                      v           (4x3/1x1)   (rounded)  (circular)
+             [moinogeo.db SQLite]       Swappable Icon Modules
+             (Generated from data/)
 ```
 
 ---
@@ -46,21 +50,25 @@ Rather than acting as a generic database provider or a standalone media library,
 MoinoGeo wraps geographic relational data and provides optional visual asset layers that developers can attach or omit based on their app's specific feature set:
 
 ### A. Core Dataset & Visual Extension Modules
-* **Core Geographic Data (`moinogeo-core`):** The primary relational engine (`moinogeo.db`) containing 150,000+ cities, states, countries, and multi-language localizations (~12.5 MB). Operates completely independently without requiring vector flag icons or map boundary files.
-* **Vector Flags Extension (`moinogeo-flags`):** An optional visual module (~1.8 MB) providing UI flag components and asset resolvers mapped to country ISO 3166-1 alpha-2 codes.
+* **Core Geographic Data (`moinogeo-core`):** The primary relational engine (`moinogeo.db`) containing 150,000+ cities, states, countries, and multi-language localizations (~12.5 MB). Generated by processing raw data in `data/` via `scripts/build_database.py`. Operates completely independently without requiring flag icons or map boundary files.
+* **Flags Core (`moinogeo-flags`):** The abstract flag engine defining `FlagAssetProvider` and the `FlagIcon` composable. Bundles **zero assets** on its own.
+* **Swappable Flag Icon Modules:**
+  * `moinogeo-flags-lipis`: Standard rectangular 4×3 / 1×1 SVG country flags (~1.8 MB).
+  * `moinogeo-flags-flagpack`: Stylized rounded-rectangle flag icons by Yummygum (~1.5 MB).
+  * `moinogeo-flags-circle`: Circular flag icons by HatScripts (~1.6 MB).
 * **Map Boundaries Extension (`moinogeo-maps`):** An optional visual module (~2.1 MB) providing TopoJSON arc decoding and polygon map overlay rendering for country boundaries.
 
 ### B. Storage Optimization & Zero Storage Waste
 Mobile developers care deeply about app binary size, download conversion rates, and cellular download limits. Because MoinoGeo is designed specifically for mobile application development, visual extensions are unbundled to prevent wasting end-user disk space and network bandwidth:
 
 * **Core Data + Flags (No Map Borders):** If an app needs country/city search and flag icons but no map overlays, omitting `world-50m.topojson` **saves 2.1 MB** (13% binary size reduction).
-* **Core Data + Map Borders (No Flags):** If an app renders map boundaries but no flag icons, omitting `flags/*.svg` **saves 1.8 MB** (11% binary size reduction).
-* **Core Data Only (No Flags or Borders):** If an app only needs search, geocoding, and city lookup, embedding only `moinogeo.db` **saves 3.9 MB** (24% binary size reduction).
+* **Core Data + Map Borders (No Flags):** If an app renders map boundaries but no flag icons, omitting flag SVGs **saves ~1.5–1.8 MB** (11% binary size reduction).
+* **Core Data Only (No Flags or Borders):** If an app only needs search, geocoding, and city lookup, embedding only `moinogeo.db` **saves ~3.9 MB** (24% binary size reduction).
 
 | Combination Selected | Modules Included | Total Storage Footprint | Savings vs Full Suite |
 | :--- | :--- | :--- | :--- |
-| **Full Suite** | Core Data + Flags + Maps | **16.4 MB** | Baseline (Full Feature Set) |
-| **Data + Flags** | Core Data + Flags | **14.3 MB** | **Saved 2.1 MB (13%)** — Map borders omitted |
+| **Full Suite (e.g. Lipis)** | Core Data + Flags Core + Flags Lipis + Maps | **~16.4 MB** | Baseline (Full Feature Set) |
+| **Data + Flags (e.g. Circle)** | Core Data + Flags Core + Flags Circle | **~14.1 MB** | **Saved 2.3 MB (14%)** — Map borders omitted |
 | **Data + Maps** | Core Data + Maps | **14.6 MB** | **Saved 1.8 MB (11%)** — Flag icons omitted |
 | **Core Data Only** | Core Data | **12.5 MB** | **Saved 3.9 MB (24%)** — Flags & borders omitted |
 
@@ -68,8 +76,9 @@ Mobile developers care deeply about app binary size, download conversion rates, 
 Geopolitical boundaries, territorial demarcations, and national flags carry significant political, regional, and legal implications. Furthermore, mobile apps often require custom visual aesthetics (e.g., circular flags, custom brand palettes, 3D flags, or regional flag sets).
 
 MoinoGeo provides **pluggable asset interfaces** so developers are never locked into default visual assets:
-1. **Custom Flag Art Injection:** Developers can use MoinoGeo's Kotlin/Swift flag components while supplying their own custom asset repository (local SVG assets, custom vector sets, remote CDN URLs, or politically localized variants).
-2. **Custom Boundary Injection:** Developers can swap the default `world-50m.topojson` with custom TopoJSON/GeoJSON boundary files (e.g., higher precision borders, disputed territory adjustments, or regionally compliant map boundaries).
+1. **Swappable Pre-Packaged Icon Sets:** Choose among `flags-lipis`, `flags-flagpack`, or `flags-circle` by selecting the corresponding Gradle dependency.
+2. **Custom Flag Art Injection:** Implement `FlagAssetProvider` to load from a custom local folder, custom vector drawables, or a remote CDN.
+3. **Custom Boundary Injection:** Swap the default `world-50m.topojson` with custom TopoJSON/GeoJSON boundary files (e.g., higher precision borders, disputed territory adjustments, or regionally compliant map boundaries).
 
 ---
 

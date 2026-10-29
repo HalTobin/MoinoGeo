@@ -1,7 +1,9 @@
 package com.moinofactory.moinogeo.core
 
+import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import com.moinofactory.moinogeo.core.dao.CityDao
 import com.moinofactory.moinogeo.core.dao.CountryDao
 import com.moinofactory.moinogeo.core.dao.StateDao
@@ -15,6 +17,7 @@ import com.moinofactory.moinogeo.core.model.TranslationEntity
     version = 1,
     exportSchema = false
 )
+@ConstructedBy(MoinoGeoDatabaseConstructor::class)
 abstract class MoinoGeoDatabase : RoomDatabase() {
     abstract fun countryDao(): CountryDao
     abstract fun stateDao(): StateDao
@@ -24,3 +27,9 @@ abstract class MoinoGeoDatabase : RoomDatabase() {
         const val DATABASE_NAME = "moinogeo.db"
     }
 }
+
+@Suppress("NO_ACTUAL_FOR_EXPECT")
+expect object MoinoGeoDatabaseConstructor : RoomDatabaseConstructor<MoinoGeoDatabase> {
+    override fun initialize(): MoinoGeoDatabase
+}
+

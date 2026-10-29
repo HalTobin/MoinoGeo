@@ -1,12 +1,15 @@
 # Maintenance & Data Automation Scripts
 
-This guide describes how to regenerate or update geographic datasets, translations, flags, and map boundaries using the automation scripts located in [scripts/](file:///Users/alanhart/Documents/Dev/MoinoGeo/scripts/README.md).
+This guide describes how to process raw upstream geographic datasets, translations, flags, and map boundaries using the automation scripts located in [scripts/](file:///Users/alanhart/Documents/Dev/MoinoGeo/scripts/README.md).
+
+> **Data Pipeline Concept:**  
+> The `data/` directory stores **raw upstream source files** (JSON dumps, raw SVGs, GeoJSON). The scripts in `scripts/` process and transform these sources into optimized artifacts (`moinogeo.db`, minified SVG sets, quantized TopoJSON) for consumption by Android, Compose Multiplatform, or iOS.
 
 ---
 
 ## 1. Database Compiler (`build_database.py`)
 
-Processes raw JSON datasets and translation files into an optimized, indexed SQLite database file (`moinogeo.db`).
+Processes raw JSON datasets and translation files from `data/` into an optimized, indexed SQLite / Room database file (`moinogeo.db`).
 
 ### Features
 - Compiles `countries`, `states`, `cities`, and multi-language `translations` (`en`, `fr`, `es`, `it`, `de`, `uk`, `ru`) into normalized SQLite tables.
@@ -16,8 +19,7 @@ Processes raw JSON datasets and translation files into an optimized, indexed SQL
 ### Usage
 ```bash
 python3 scripts/build_database.py \
-  --input data/raw/ \
-  --translations data/translations/ \
+  --input data/countries+states+cities.json \
   --output data/moinogeo.db
 ```
 
@@ -25,16 +27,23 @@ python3 scripts/build_database.py \
 
 ## 2. Flag Icon Minifier (`optimize_flags.py`)
 
-Minifies SVG vector flag icons from [`lipis/flag-icons`](https://github.com/lipis/flag-icons) and standardizes filenames to lowercase ISO 3166-1 alpha-2 codes.
+Minifies SVG vector flag icons from upstream icon repositories (**`lipis/flag-icons`**, **`flagpack-core`**, **`circle-flags`**) and standardizes filenames to lowercase ISO 3166-1 alpha-2 codes.
 
 ### Features
 - Strips XML metadata, comments, doctypes, and redundant formatting whitespace.
-- Standardizes output paths (`data/flags/us.svg`, `data/flags/de.svg`, etc.).
+- Standardizes output paths for each swappable icon module (`flags-lipis/`, `flags-flagpack/`, `flags-circle/`).
 - Achieves ~70%+ file size reduction per vector SVG.
 
 ### Usage
 ```bash
-python3 scripts/optimize_flags.py --input path/to/lipis_flags/ --output data/flags/
+# Minify lipis flags
+python3 scripts/optimize_flags.py --input data/raw-flags/lipis/ --output kotlin/flags-lipis/src/commonMain/resources/flags-lipis/
+
+# Minify flagpack flags
+python3 scripts/optimize_flags.py --input data/raw-flags/flagpack/ --output kotlin/flags-flagpack/src/commonMain/resources/flags-flagpack/
+
+# Minify circle flags
+python3 scripts/optimize_flags.py --input data/raw-flags/circle/ --output kotlin/flags-circle/src/commonMain/resources/flags-circle/
 ```
 
 ---

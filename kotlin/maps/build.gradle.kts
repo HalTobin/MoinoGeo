@@ -9,14 +9,11 @@ plugins {
 kotlin {
     androidTarget {
         publishLibraryVariants("release", "debug")
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 
-    iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -35,12 +32,26 @@ kotlin {
 
 android {
     namespace = "com.moinofactory.moinogeo.maps"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig {
         minSdk = 24
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+}
+
+androidComponents {
+    beforeVariants { variantBuilder ->
+        try {
+            variantBuilder.javaClass.getMethod("setEnableUnitTest", Boolean::class.javaPrimitiveType)
+                .invoke(variantBuilder, true)
+        } catch (_: Throwable) {}
     }
 }
