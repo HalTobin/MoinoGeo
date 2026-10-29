@@ -1,17 +1,19 @@
+import org.gradle.kotlin.dsl.sourceSets
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    androidTarget {
-        publishLibraryVariants("release", "debug")
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
+    android {
+        namespace = "com.moinofactory.moinogeo.maps"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
     }
 
     iosArm64()
@@ -20,38 +22,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.json)
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.ui)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.ui)
         }
+
         commonTest.dependencies {
-            implementation(kotlin("test"))
+            implementation(libs.kotlin.test)
         }
-    }
-}
-
-android {
-    namespace = "com.moinofactory.moinogeo.maps"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 24
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-        }
-    }
-}
-
-androidComponents {
-    beforeVariants { variantBuilder ->
-        try {
-            variantBuilder.javaClass.getMethod("setEnableUnitTest", Boolean::class.javaPrimitiveType)
-                .invoke(variantBuilder, true)
-        } catch (_: Throwable) {}
     }
 }

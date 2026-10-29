@@ -1,9 +1,11 @@
+import org.gradle.kotlin.dsl.sourceSets
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.room)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 room {
@@ -11,11 +13,11 @@ room {
 }
 
 kotlin {
-    androidTarget {
-        publishLibraryVariants("release", "debug")
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
+    android {
+        namespace = "com.moinofactory.moinogeo.core"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
     }
 
     iosArm64()
@@ -28,8 +30,9 @@ kotlin {
             implementation(libs.room.runtime)
             implementation(libs.sqlite.bundled)
         }
+
         commonTest.dependencies {
-            implementation(kotlin("test"))
+            implementation(libs.kotlin.test)
         }
     }
 }
@@ -38,16 +41,4 @@ dependencies {
     add("kspAndroid", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
-}
-
-android {
-    namespace = "com.moinofactory.moinogeo.core"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 24
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
 }
