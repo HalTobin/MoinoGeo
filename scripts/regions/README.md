@@ -1,12 +1,13 @@
 # Regions SQLite export scripts
 
 Build a slim search-focused `moinogeo.db` from the nested JSON dump under
-[`data/db/regions/`](../../data/db/regions/) and copy it into platform modules.
+[`data/db/regions/`](../../data/db/regions/) and copy it into the Kotlin core
+module (same shared-resource pattern as [`scripts/flags`](../flags/)).
 
 | Script | Role |
 |--------|------|
 | [`common/`](common/) | JSON load, slim schema DDL, SQLite build |
-| [`export_kotlin.py`](export_kotlin.py) | Android assets + JVM resources in `kotlin/core` |
+| [`export_kotlin.py`](export_kotlin.py) | Shared `commonMain/resources` in `kotlin/core` |
 | [`export_darwin.py`](export_darwin.py) | Stub for a future Swift local package |
 
 ## Slim schema
@@ -36,10 +37,13 @@ python3 scripts/regions/export_kotlin.py --dry-run
 python3 scripts/regions/export_kotlin.py --identity-hash '<hash>'
 ```
 
-Kotlin destinations:
+Kotlin destination (single shared copy):
 
-- `kotlin/core/src/androidMain/assets/databases/moinogeo.db` (`createFromAsset`)
-- `kotlin/core/src/jvmMain/resources/databases/moinogeo.db` (copied to disk on open)
+- `kotlin/core/src/commonMain/resources/databases/moinogeo.db`
+
+Android and JVM copy that classpath resource to a writable file on first open.
+Legacy `androidMain/assets` / `jvmMain/resources` copies are deleted by the
+export script when present.
 
 ## Room identity hash
 

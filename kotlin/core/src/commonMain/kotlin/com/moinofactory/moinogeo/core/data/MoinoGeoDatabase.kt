@@ -40,7 +40,7 @@ internal abstract class MoinoGeoDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "moinogeo.db"
-        const val ASSET_PATH = "databases/moinogeo.db"
+        /** Classpath path under `src/commonMain/resources/`. */
         const val RESOURCE_PATH = "databases/moinogeo.db"
     }
 }

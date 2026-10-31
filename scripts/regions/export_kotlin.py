@@ -2,7 +2,7 @@
 """Export the slim regions SQLite DB into the Kotlin core module.
 
 Shared JSON→SQLite logic lives in ``scripts.regions.common``.
-This script only maps destinations for Android assets + JVM resources.
+This script writes a single shared resource under ``commonMain/resources``.
 
 Usage (from repo root):
 
@@ -24,8 +24,13 @@ if str(_REGIONS_DIR.parent) not in sys.path:
 from regions.common.catalog import identity_hash_path, repo_root  # noqa: E402
 from regions.common.pipeline import build_database  # noqa: E402
 
-# Relative to repository root.
+# Single shared destination (same pattern as kotlin/flags/*/commonMain/resources).
 KOTLIN_DESTINATIONS: tuple[str, ...] = (
+    "kotlin/core/src/commonMain/resources/databases/moinogeo.db",
+)
+
+# Legacy per-target copies — removed when present so we do not ship duplicates.
+LEGACY_DESTINATIONS: tuple[str, ...] = (
     "kotlin/core/src/androidMain/assets/databases/moinogeo.db",
     "kotlin/core/src/jvmMain/resources/databases/moinogeo.db",
 )
@@ -35,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Build moinogeo.db from data/db/regions JSON and copy it into "
-            "kotlin/core Android assets + JVM resources."
+            "kotlin/core commonMain resources."
         )
     )
     parser.add_argument(
@@ -79,6 +84,18 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run,
         identity_hash=args.identity_hash,
     )
+
+    if not args.dry_run and not stats.errors:
+        for rel in LEGACY_DESTINATIONS:
+            legacy = root / rel
+            if legacy.is_file():
+                legacy.unlink()
+                print(f"Removed legacy copy: {rel}")
+                parent = legacy.parent
+                # Drop empty databases/ folders left behind.
+                if parent.is_dir() and not any(parent.iterdir()):
+                    parent.rmdir()
+
     stats.print_summary()
     return 0 if not stats.errors else 1
 

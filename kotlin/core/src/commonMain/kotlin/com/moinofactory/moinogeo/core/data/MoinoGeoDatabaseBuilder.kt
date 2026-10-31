@@ -8,9 +8,8 @@ import kotlinx.coroutines.IO
 /**
  * Platform-specific [RoomDatabase.Builder] for the bundled regions database.
  *
- * - Android: createFromAsset with [MoinoGeoDatabase.ASSET_PATH]
- * - JVM: copies [MoinoGeoDatabase.RESOURCE_PATH] from the classpath to a local file
- * - Apple: on-disk path stub until Darwin export lands
+ * The SQLite file is shipped once under `commonMain/resources` ([MoinoGeoDatabase.RESOURCE_PATH]).
+ * Android and JVM copy it to a writable path on first open; Apple wiring comes later.
  */
 internal expect fun createMoinoGeoDatabaseBuilder(context: Any? = null): RoomDatabase.Builder<MoinoGeoDatabase>
 
