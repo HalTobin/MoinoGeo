@@ -5,6 +5,7 @@ import com.moinofactory.moinogeo.flags.circle.CircleFlagAssetProvider
 import com.moinofactory.moinogeo.flags.flagpack.FlagpackAssetProvider
 import com.moinofactory.moinogeo.flags.lipis.rectangle.LipisRectangleFlagAssetProvider
 import com.moinofactory.moinogeo.flags.lipis.square.LipisSquareFlagAssetProvider
+import com.moinofactory.moinogeo.flags.withFallback
 
 /**
  * Flag libraries available in `@kotlin/flags`.
@@ -40,5 +41,22 @@ enum class FlagLibraryType(
         providerFactory = { CircleFlagAssetProvider.classpathAssets() },
     );
 
-    fun getProvider(): FlagAssetProvider = providerFactory()
+    /**
+     * @param fallbackIso2 Optional unknown/placeholder code (default `xx`) used when
+     * the requested country SVG is missing. Pass `null` to disable provider-level fallback.
+     */
+    fun getProvider(fallbackIso2: String? = DEFAULT_FALLBACK_ISO2): FlagAssetProvider {
+        val primary = providerFactory()
+        if (fallbackIso2 == null) return primary
+        val fallbackData = primary.getFlagData(fallbackIso2) ?: return primary
+        return primary.withFallback(fallbackData)
+    }
+
+    /** Coil model for FlagIcon load-error fallback (same pack's `xx` artwork). */
+    fun getFallbackData(fallbackIso2: String = DEFAULT_FALLBACK_ISO2): Any? =
+        providerFactory().getFlagData(fallbackIso2)
+
+    companion object {
+        const val DEFAULT_FALLBACK_ISO2 = "xx"
+    }
 }

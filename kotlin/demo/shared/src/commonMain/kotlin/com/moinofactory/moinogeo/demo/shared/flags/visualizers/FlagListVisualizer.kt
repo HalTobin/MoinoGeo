@@ -34,6 +34,7 @@ fun FlagListVisualizer(
     provider: FlagAssetProvider,
     onCountryClick: (CountryEntity) -> Unit,
     modifier: Modifier = Modifier,
+    fallback: Any? = null,
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -53,6 +54,7 @@ fun FlagListVisualizer(
                         iso2Code = country.iso2,
                         provider = provider,
                         modifier = Modifier.size(48.dp, 36.dp),
+                        fallback = fallback,
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {

@@ -38,6 +38,7 @@ fun FlagGridVisualizer(
     provider: FlagAssetProvider,
     onCountryClick: (CountryEntity) -> Unit,
     modifier: Modifier = Modifier,
+    fallback: Any? = null,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 90.dp),
@@ -61,6 +62,7 @@ fun FlagGridVisualizer(
                         iso2Code = country.iso2,
                         provider = provider,
                         modifier = Modifier.size(52.dp, 38.dp),
+                        fallback = fallback,
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(

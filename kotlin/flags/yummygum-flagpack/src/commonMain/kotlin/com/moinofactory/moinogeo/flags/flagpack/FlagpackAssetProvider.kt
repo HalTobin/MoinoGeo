@@ -35,7 +35,7 @@ class FlagpackAssetProvider(
          * Compose Multiplatform / custom resource resolver.
          * Pass a lambda that loads `flags-flagpack/<iso2>.svg` (e.g. via `Res.readBytes`).
          */
-        fun composeResources(resolve: (iso2Code: String) -> Any): FlagAssetProvider =
+        fun composeResources(resolve: (iso2Code: String) -> Any?): FlagAssetProvider =
             ComposeResourceFlagAssetProvider(resolve)
     }
 }

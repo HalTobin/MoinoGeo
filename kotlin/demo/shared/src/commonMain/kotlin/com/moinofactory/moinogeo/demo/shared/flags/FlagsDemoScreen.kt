@@ -162,7 +162,8 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
 
-                    val activeProvider = selectedLibrary.getProvider()
+                    val activeProvider = remember(selectedLibrary) { selectedLibrary.getProvider() }
+                    val activeFallback = remember(selectedLibrary) { selectedLibrary.getFallbackData() }
 
                     when (selectedViewMode) {
                         FlagViewMode.GRID -> {
@@ -170,6 +171,7 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
                                 countries = filteredCountries,
                                 provider = activeProvider,
                                 onCountryClick = { inspectedCountry = it },
+                                fallback = activeFallback,
                             )
                         }
                         FlagViewMode.LIST -> {
@@ -177,6 +179,7 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
                                 countries = filteredCountries,
                                 provider = activeProvider,
                                 onCountryClick = { inspectedCountry = it },
+                                fallback = activeFallback,
                             )
                         }
                         FlagViewMode.COMPARE -> {

@@ -81,6 +81,7 @@ fun FlagComparisonVisualizer(
                                         iso2Code = country.iso2,
                                         provider = library.getProvider(),
                                         modifier = Modifier.size(48.dp, 34.dp),
+                                        fallback = library.getFallbackData(),
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))

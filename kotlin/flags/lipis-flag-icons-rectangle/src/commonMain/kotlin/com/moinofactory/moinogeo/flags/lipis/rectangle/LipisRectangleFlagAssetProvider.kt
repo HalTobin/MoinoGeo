@@ -27,7 +27,7 @@ class LipisRectangleFlagAssetProvider(
         fun classpathAssets(): FlagAssetProvider =
             ClasspathFlagAssetProvider(ASSET_DIRECTORY)
 
-        fun composeResources(resolve: (iso2Code: String) -> Any): FlagAssetProvider =
+        fun composeResources(resolve: (iso2Code: String) -> Any?): FlagAssetProvider =
             ComposeResourceFlagAssetProvider(resolve)
     }
 }

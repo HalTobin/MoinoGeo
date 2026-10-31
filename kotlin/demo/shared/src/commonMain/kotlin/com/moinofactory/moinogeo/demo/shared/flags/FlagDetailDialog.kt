@@ -60,6 +60,7 @@ fun FlagDetailDialog(
                                 iso2Code = country.iso2,
                                 provider = library.getProvider(),
                                 modifier = Modifier.size(56.dp, 42.dp),
+                                fallback = library.getFallbackData(),
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
