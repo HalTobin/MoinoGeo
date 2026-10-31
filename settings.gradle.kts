@@ -24,8 +24,23 @@ project(":core").projectDir = file("kotlin/core")
 include(":flags")
 project(":flags").projectDir = file("kotlin/flags")
 
+include(":flags-lipis")
+project(":flags-lipis").projectDir = file("kotlin/flags-lipis")
+
+include(":flags-flagpack")
+project(":flags-flagpack").projectDir = file("kotlin/flags-flagpack")
+
+include(":flags-circle")
+project(":flags-circle").projectDir = file("kotlin/flags-circle")
+
 include(":maps")
 project(":maps").projectDir = file("kotlin/maps")
 
-include(":app")
-project(":app").projectDir = file("android/app")
+include(":shared")
+project(":shared").projectDir = file("kotlin/demo/shared")
+
+include(":android")
+project(":android").projectDir = file("kotlin/demo/android")
+
+include(":jvm")
+project(":jvm").projectDir = file("kotlin/demo/jvm")

@@ -14,11 +14,11 @@ Place pre-compiled database assets in `app/src/main/assets/`. You can include al
 app/src/main/
 └── assets/
     ├── databases/
-    │   └── moinogeo.db       [Core Module - 12.5 MB] (Optional)
+    │   └── moinogeo.db            [Core Module - 12.5 MB]
     ├── geo/
-    │   └── world-50m.topojson [Maps Module - 2.1 MB]   (Optional)
-    └── flags/
-        ├── us.svg            [Flags Module - 1.8 MB]  (Optional: swap or omit)
+    │   └── world-50m.topojson     [Maps Module - 2.1 MB]   (Optional)
+    └── flags-lipis/               [Pick ONE icon set, or omit & use custom provider]
+        ├── us.svg                 (or flags-flagpack / flags-circle)
         ├── de.svg
         └── ...
 ```
@@ -84,38 +84,64 @@ abstract class MoinoGeoDatabase : RoomDatabase() {
 
 ---
 
-## 3. Custom Flag Asset Provider Setup
+## 3. Flag Modules & Custom Asset Providers
 
-To use MoinoGeo's flag rendering core with custom artwork or alternative asset locations:
+Flags are split into a **core** module (no assets) plus optional **icon-set** modules. See [flags.md](flags.md) for the full architecture.
 
 ```kotlin
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import coil.compose.AsyncImage
-
-// Abstract Provider
-fun interface FlagAssetProvider {
-    fun getFlagData(iso2Code: String): Any
+dependencies {
+    implementation(projects.flags)            // FlagAssetProvider + FlagIcon
+    implementation(projects.flagsLipis)       // or flagsFlagpack / flagsCircle
 }
+```
 
-// Custom Provider pointing to custom flag SVGs (e.g. custom directory, drawable res, or remote CDN)
-class CustomFlagProvider(private val customBaseUrl: String) : FlagAssetProvider {
-    override fun getFlagData(iso2Code: String): Any {
-        return "$customBaseUrl/${iso2Code.lowercase()}.svg"
-    }
-}
+### Android assets (bundled SVGs)
 
-// Usage in Jetpack Compose
+```kotlin
+import com.moinofactory.moinogeo.flags.FlagIcon
+import com.moinofactory.moinogeo.flags.lipis.LipisFlagAssetProvider
+
 @Composable
-fun CustomFlagIcon(
-    iso2Code: String,
-    modifier: Modifier = Modifier,
-    provider: FlagAssetProvider = CustomFlagProvider("https://cdn.example.com/flags")
-) {
-    AsyncImage(
-        model = provider.getFlagData(iso2Code),
-        contentDescription = "Flag for $iso2Code",
-        modifier = modifier
+fun CountryFlag(iso2: String) {
+    FlagIcon(
+        iso2Code = iso2,
+        provider = LipisFlagAssetProvider.androidAssets(),
+    )
+}
+```
+
+### Compose Multiplatform `composeResources`
+
+```kotlin
+import com.moinofactory.moinogeo.flags.ComposeResourceFlagAssetProvider
+import com.moinofactory.moinogeo.flags.FlagIcon
+
+val provider = ComposeResourceFlagAssetProvider { iso2 ->
+    Res.readBytes("files/flags/$iso2.svg")
+}
+
+@Composable
+fun CountryFlag(iso2: String) {
+    FlagIcon(iso2Code = iso2, provider = provider)
+}
+```
+
+### Custom artwork / CDN (no icon-set module)
+
+```kotlin
+import com.moinofactory.moinogeo.flags.FlagAssetProvider
+import com.moinofactory.moinogeo.flags.FlagIcon
+import com.moinofactory.moinogeo.flags.UriFlagAssetProvider
+
+class CustomFlagProvider(
+    private val customBaseUrl: String,
+) : FlagAssetProvider by UriFlagAssetProvider(customBaseUrl)
+
+@Composable
+fun CustomFlagIcon(iso2Code: String) {
+    FlagIcon(
+        iso2Code = iso2Code,
+        provider = CustomFlagProvider("https://cdn.example.com/flags"),
     )
 }
 ```
@@ -174,3 +200,13 @@ suspend fun loadJapaneseCities(context: Context) {
     }
 }
 ```
+
+---
+
+## 5. Reference Demo Application Architecture (`kotlin/demo`)
+
+MoinoGeo includes a reference multiplatform demo harness located in `kotlin/demo/` with the following structure:
+- **`kotlin/demo/shared`**: Shared Kotlin Multiplatform (KMP) and Compose Multiplatform (CMP) module containing UI screens (`MoinoGeoAppScreen`), platform-agnostic view logic, and cross-platform database helpers (`createDatabase` expect/actual).
+- **`kotlin/demo/android`**: Android application target wrapping the shared demo module and bundling Android assets (`assets/databases/moinogeo.db`).
+- **`kotlin/demo/jvm`**: JVM / Compose Desktop application target running the demo on desktop environments.
+
