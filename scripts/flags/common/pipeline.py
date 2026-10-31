@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .catalog import FlagSet, discover_iso2_svgs, normalized_iso2_filename
+from .catalog import FlagSet, discover_flag_svgs, normalized_flag_filename
 from .optimize import optimize_svg
 
 
@@ -72,7 +72,7 @@ def export_flag_set(
     )
 
     try:
-        sources = discover_iso2_svgs(source_dir, recursive=False)
+        sources = discover_flag_svgs(source_dir, recursive=False)
     except FileNotFoundError as exc:
         stats.errors.append(str(exc))
         return stats
@@ -86,7 +86,7 @@ def export_flag_set(
                 stale.unlink()
 
     for src in sources:
-        out_name = normalized_iso2_filename(src)
+        out_name = normalized_flag_filename(src)
         dest = dest_dir / out_name
         try:
             raw = src.read_text(encoding="utf-8")

@@ -56,7 +56,10 @@ def _select_sets(only: list[str] | None) -> list[FlagSet]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Export ISO-2 flag SVGs from data/flags into kotlin/flags modules."
+        description=(
+            "Export flag SVGs (ISO-2, regional, and named) from data/flags "
+            "into kotlin/flags modules."
+        )
     )
     parser.add_argument(
         "--root",

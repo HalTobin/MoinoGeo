@@ -1,4 +1,4 @@
-"""Flag source catalog and ISO-2 SVG discovery."""
+"""Flag source catalog and SVG discovery."""
 
 from __future__ import annotations
 
@@ -6,7 +6,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-_ISO2_SVG_RE = re.compile(r"^[A-Za-z]{2}\.svg$")
+# ISO-2 (``fr.svg``), regional / subdivision (``gb-eng.svg``, ``BQ-BO.svg``),
+# and named / org flags (``arab.svg``, ``european_union.svg``).
+_FLAG_SVG_RE = re.compile(r"^[A-Za-z0-9_-]+\.svg$")
 
 
 def repo_root() -> Path:
@@ -51,11 +53,16 @@ FLAG_SETS: tuple[FlagSet, ...] = (
 )
 
 
-def discover_iso2_svgs(source_dir: Path, *, recursive: bool = False) -> list[Path]:
-    """List SVG files whose basename is a 2-letter ISO code (e.g. ``fr.svg``).
+def discover_flag_svgs(source_dir: Path, *, recursive: bool = False) -> list[Path]:
+    """List exportable flag SVG files under *source_dir*.
 
-    Regional variants (``gb-eng.svg``), multi-part codes (``BQ-BO.svg``), and
-    non-ISO names under nested folders (e.g. ``flags/other/``) are skipped.
+    Includes ISO 3166-1 alpha-2 codes (``fr.svg``), regional / subdivision
+    variants (``gb-eng.svg``, ``BQ-BO.svg``), and named / organization flags
+    (``arab.svg``, ``european_union.svg``).
+
+    Nested folders (e.g. ``flags/language/``, ``flags/other/``) are skipped
+    unless *recursive* is True, to avoid flattening basename collisions with
+    country codes.
     """
     if not source_dir.is_dir():
         raise FileNotFoundError(f"Flag source directory not found: {source_dir}")
@@ -65,7 +72,7 @@ def discover_iso2_svgs(source_dir: Path, *, recursive: bool = False) -> list[Pat
     for path in iterator:
         if not path.is_file():
             continue
-        if not _ISO2_SVG_RE.match(path.name):
+        if not _FLAG_SVG_RE.match(path.name):
             continue
         # Non-recursive: ignore anything under a subdirectory (e.g. other/).
         if not recursive and path.parent != source_dir:
@@ -75,6 +82,16 @@ def discover_iso2_svgs(source_dir: Path, *, recursive: bool = False) -> list[Pat
     return sorted(files, key=lambda p: p.name.lower())
 
 
-def normalized_iso2_filename(path: Path) -> str:
-    """Return lowercase ``xx.svg`` for an ISO-2 source path."""
+def discover_iso2_svgs(source_dir: Path, *, recursive: bool = False) -> list[Path]:
+    """Alias for [discover_flag_svgs] — kept for older call sites."""
+    return discover_flag_svgs(source_dir, recursive=recursive)
+
+
+def normalized_flag_filename(path: Path) -> str:
+    """Return lowercase ``code.svg`` for a flag source path."""
     return path.name.lower()
+
+
+def normalized_iso2_filename(path: Path) -> str:
+    """Alias for [normalized_flag_filename] — kept for older call sites."""
+    return normalized_flag_filename(path)

@@ -1,6 +1,6 @@
 # Flag SVG export scripts
 
-Shared tooling to copy ISO 3166-1 alpha-2 flag SVGs from [`data/flags/`](../../data/flags/) into platform modules, with **lossless** cleanup (comments, XML prolog, DOCTYPE, `<metadata>`, inter-tag whitespace only — no path/precision changes).
+Shared tooling to copy flag SVGs from [`data/flags/`](../../data/flags/) into platform modules, with **lossless** cleanup (comments, XML prolog, DOCTYPE, `<metadata>`, inter-tag whitespace only — no path/precision changes).
 
 | Script | Role |
 |--------|------|
@@ -17,7 +17,13 @@ Shared tooling to copy ISO 3166-1 alpha-2 flag SVGs from [`data/flags/`](../../d
 | `lipis-square` | `data/flags/lipis_flag-icons/flags/1x1` | `…/flags-lipis-square/` |
 | `lipis-rectangle` | `data/flags/lipis_flag-icons/flags/4x3` | `…/flags-lipis-rectangle/` |
 
-Only basenames matching `xx.svg` (case-insensitive) are exported. Regional variants (`gb-eng.svg`), compound codes (`BQ-BO.svg`), and nested folders (`flags/other/`) are skipped.
+All top-level `*.svg` basenames matching `[A-Za-z0-9_-]+.svg` are exported:
+
+- ISO 3166-1 alpha-2 (`fr.svg`)
+- Regional / subdivision variants (`gb-eng.svg`, `BQ-BO.svg`, `us-ca.svg`)
+- Named / organization flags (`arab.svg`, `european_union.svg`)
+
+Nested folders (`flags/language/`, `flags/other/`) are skipped so their basenames do not collide with country codes when flattened into the destination.
 
 ## Usage
 
@@ -35,7 +41,8 @@ python3 scripts/flags/export_kotlin.py --only yummygum-flagpack lipis-square
 python3 scripts/flags/export_kotlin.py --clean
 ```
 
-Filenames are normalized to lowercase (`FR.svg` → `fr.svg`).
+Filenames are normalized to lowercase (`FR.svg` → `fr.svg`, `GB-ENG.svg` → `gb-eng.svg`).
+Providers resolve codes the same way — pass `gb-eng`, `bq-bo`, etc. to `getFlagData`.
 
 ## Adding iOS later
 
