@@ -24,14 +24,20 @@ project(":core").projectDir = file("kotlin/core")
 include(":flags")
 project(":flags").projectDir = file("kotlin/flags")
 
-include(":flags-lipis")
-project(":flags-lipis").projectDir = file("kotlin/flags-lipis")
+include(":flags:core")
+project(":flags:core").projectDir = file("kotlin/flags/core")
 
-include(":flags-flagpack")
-project(":flags-flagpack").projectDir = file("kotlin/flags-flagpack")
+include(":flags:lipis-flag-icons-square")
+project(":flags:lipis-flag-icons-square").projectDir = file("kotlin/flags/lipis-flag-icons-square")
 
-include(":flags-circle")
-project(":flags-circle").projectDir = file("kotlin/flags-circle")
+include(":flags:lipis-flag-icons-rectangle")
+project(":flags:lipis-flag-icons-rectangle").projectDir = file("kotlin/flags/lipis-flag-icons-rectangle")
+
+include(":flags:yummygum-flagpack")
+project(":flags:yummygum-flagpack").projectDir = file("kotlin/flags/yummygum-flagpack")
+
+include(":flags:hatscripts-flags-circle")
+project(":flags:hatscripts-flags-circle").projectDir = file("kotlin/flags/hatscripts-flags-circle")
 
 include(":maps")
 project(":maps").projectDir = file("kotlin/maps")

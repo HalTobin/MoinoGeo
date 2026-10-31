@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.moinofactory.moinogeo.flags.circle"
+        namespace = "com.moinofactory.moinogeo.flags.hatscripts"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
@@ -19,7 +19,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.flags)
+            api(projects.flags.core)
         }
 
         commonTest.dependencies {

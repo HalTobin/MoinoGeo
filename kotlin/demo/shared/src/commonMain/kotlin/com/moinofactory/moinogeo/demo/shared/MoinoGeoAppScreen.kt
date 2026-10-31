@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.core.MoinoGeoDatabase
 import com.moinofactory.moinogeo.core.model.CountryEntity
 import com.moinofactory.moinogeo.flags.FlagIcon
-import com.moinofactory.moinogeo.flags.lipis.LipisFlagAssetProvider
+import com.moinofactory.moinogeo.flags.lipis.rectangle.LipisRectangleFlagAssetProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -95,7 +95,7 @@ fun MoinoGeoAppScreen(db: MoinoGeoDatabase) {
                                 FlagIcon(
                                     iso2Code = country.iso2,
                                     // Demo CDN until optimize_flags.py populates local SVGs
-                                    provider = LipisFlagAssetProvider(
+                                    provider = LipisRectangleFlagAssetProvider(
                                         "https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.5.0/flags/4x3"
                                     ),
                                     modifier = Modifier.size(40.dp)

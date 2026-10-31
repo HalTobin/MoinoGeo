@@ -38,8 +38,8 @@ kotlin {
             implementation(libs.sqlite.bundled)
 
             implementation(projects.core)
-            implementation(projects.flags)
-            implementation(projects.flagsLipis)
+            implementation(projects.flags.core)
+            implementation(projects.flags.lipisFlagIconsRectangle)
         }
 
         commonTest.dependencies {

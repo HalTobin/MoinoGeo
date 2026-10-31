@@ -11,7 +11,8 @@ import coil3.svg.SvgDecoder
  * Renders a country flag via [FlagAssetProvider] and Coil's SVG decoder.
  *
  * The core module bundles no flag assets — pass a provider from an icon-set
- * module (`:flags-lipis`, `:flags-flagpack`, `:flags-circle`) or your own
+ * module (`:flags:lipis-flag-icons-rectangle`, `:flags:lipis-flag-icons-square`,
+ * `:flags:yummygum-flagpack`, `:flags:hatscripts-flags-circle`) or your own
  * [FlagAssetProvider] / [ComposeResourceFlagAssetProvider] /
  * [AndroidAssetFlagAssetProvider] implementation.
  */
