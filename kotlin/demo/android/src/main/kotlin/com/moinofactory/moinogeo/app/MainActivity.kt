@@ -8,11 +8,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.moinofactory.moinogeo.demo.shared.MoinoGeoAppScreen
-import com.moinofactory.moinogeo.demo.shared.createDatabase
+import com.moinofactory.moinogeo.demo.shared.createMoinoGeo
 import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
-    private val db by lazy { createDatabase(applicationContext) }
+    private val geo by lazy { createMoinoGeo(applicationContext) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MoinoGeoAppScreen(db)
+                    MoinoGeoAppScreen(geo)
                 }
             }
         }

@@ -23,8 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.moinofactory.moinogeo.core.MoinoGeoDatabase
-import com.moinofactory.moinogeo.core.model.CountryEntity
+import com.moinofactory.moinogeo.core.domain.MoinoGeoService
+import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.demo.shared.data.sampleCountries
 import com.moinofactory.moinogeo.demo.shared.flags.components.FlagLibrarySelector
 import com.moinofactory.moinogeo.demo.shared.flags.components.FlagOptionsBar
@@ -41,19 +41,19 @@ import kotlinx.coroutines.withContext
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FlagsDemoScreen(db: MoinoGeoDatabase) {
-    var countries by remember { mutableStateOf<List<CountryEntity>>(emptyList()) }
+fun FlagsDemoScreen(geo: MoinoGeoService) {
+    var countries by remember { mutableStateOf<List<Country>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedLibrary by remember { mutableStateOf(FlagLibraryType.LIPIS_RECTANGLE) }
     var selectedViewMode by remember { mutableStateOf(FlagViewMode.GRID) }
-    var inspectedCountry by remember { mutableStateOf<CountryEntity?>(null) }
+    var inspectedCountry by remember { mutableStateOf<Country?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var statusInfo by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         try {
             val dbCountries = withContext(Dispatchers.IO) {
-                db.countryDao().getAllCountries()
+                geo.getCountries()
             }
             if (dbCountries.isNotEmpty()) {
                 countries = dbCountries

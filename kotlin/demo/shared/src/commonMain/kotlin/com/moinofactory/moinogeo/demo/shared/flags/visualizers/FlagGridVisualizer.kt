@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.moinofactory.moinogeo.core.model.CountryEntity
+import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.flags.FlagAssetProvider
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -34,9 +34,9 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  */
 @Composable
 fun FlagGridVisualizer(
-    countries: List<CountryEntity>,
+    countries: List<Country>,
     provider: FlagAssetProvider,
-    onCountryClick: (CountryEntity) -> Unit,
+    onCountryClick: (Country) -> Unit,
     modifier: Modifier = Modifier,
     fallback: Any? = null,
 ) {

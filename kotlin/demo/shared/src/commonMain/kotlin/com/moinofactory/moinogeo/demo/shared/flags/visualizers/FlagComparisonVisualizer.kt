@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moinofactory.moinogeo.core.model.CountryEntity
+import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -34,8 +34,8 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  */
 @Composable
 fun FlagComparisonVisualizer(
-    countries: List<CountryEntity>,
-    onCountryClick: (CountryEntity) -> Unit,
+    countries: List<Country>,
+    onCountryClick: (Country) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(

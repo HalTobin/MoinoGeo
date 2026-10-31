@@ -6,7 +6,7 @@ Shared tooling to copy flag SVGs from [`data/flags/`](../../data/flags/) into pl
 |--------|------|
 | [`common/`](common/) | Catalog, analyzer, optimizer, export pipeline |
 | [`export_kotlin.py`](export_kotlin.py) | Write into `kotlin/flags/*/resources/` |
-| [`export_ios.py`](export_ios.py) | Stub for a future Swift local package |
+| [`export_darwin.py`](export_darwin.py) | Stub for a future Swift local package |
 
 ## Flag sets
 
@@ -47,7 +47,7 @@ Providers resolve codes the same way — pass `gb-eng`, `bq-bo`, etc. to `getFla
 ## Adding iOS later
 
 1. Create the Swift package resource folders.
-2. Update `IOS_DESTINATIONS` in [`export_ios.py`](export_ios.py).
+2. Update `IOS_DESTINATIONS` in [`export_darwin.py`](export_darwin.py).
 3. Run `python3 scripts/flags/export_ios.py`.
 
 Optimization stays in `common/`; only the destination map is platform-specific.

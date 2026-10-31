@@ -7,10 +7,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.moinofactory.moinogeo.demo.shared.MoinoGeoAppScreen
-import com.moinofactory.moinogeo.demo.shared.createDatabase
+import com.moinofactory.moinogeo.demo.shared.createMoinoGeo
 
 fun main() = application {
-    val db = createDatabase()
+    val geo = createMoinoGeo()
     Window(
         onCloseRequest = ::exitApplication,
         title = "MoinoGeo JVM Demo",
@@ -20,7 +20,7 @@ fun main() = application {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background,
             ) {
-                MoinoGeoAppScreen(db)
+                MoinoGeoAppScreen(geo)
             }
         }
     }

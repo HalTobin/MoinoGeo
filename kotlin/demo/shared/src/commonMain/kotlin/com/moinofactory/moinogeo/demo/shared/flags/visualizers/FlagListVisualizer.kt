@@ -20,8 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.moinofactory.moinogeo.core.model.CountryEntity
+import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.flags.FlagAssetProvider
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -30,9 +29,9 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  */
 @Composable
 fun FlagListVisualizer(
-    countries: List<CountryEntity>,
+    countries: List<Country>,
     provider: FlagAssetProvider,
-    onCountryClick: (CountryEntity) -> Unit,
+    onCountryClick: (Country) -> Unit,
     modifier: Modifier = Modifier,
     fallback: Any? = null,
 ) {
@@ -64,13 +63,10 @@ fun FlagListVisualizer(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = "Capital: ${country.capital ?: "N/A"} | Region: ${country.region ?: "N/A"}",
+                            text = "Capital: ${country.capital ?: "N/A"}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    }
-                    country.emoji?.let { emoji ->
-                        Text(text = emoji, fontSize = 22.sp)
                     }
                 }
             }

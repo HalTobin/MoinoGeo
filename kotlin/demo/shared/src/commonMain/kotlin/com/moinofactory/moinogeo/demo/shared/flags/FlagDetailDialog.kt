@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moinofactory.moinogeo.core.model.CountryEntity
+import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.demo.shared.ui.DetailRow
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -28,19 +27,13 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  */
 @Composable
 fun FlagDetailDialog(
-    country: CountryEntity,
+    country: Country,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                country.emoji?.let {
-                    Text(text = it, fontSize = 24.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(text = country.name, fontWeight = FontWeight.Bold)
-            }
+            Text(text = country.name, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -78,8 +71,8 @@ fun FlagDetailDialog(
                     DetailRow("ISO Alpha-2:", country.iso2)
                     DetailRow("ISO Alpha-3:", country.iso3)
                     country.capital?.let { DetailRow("Capital:", it) }
-                    country.region?.let { DetailRow("Region:", it) }
-                    country.currency?.let { DetailRow("Currency:", it) }
+                    country.regionId?.let { DetailRow("Region id:", it.toString()) }
+                    country.subregionId?.let { DetailRow("Subregion id:", it.toString()) }
                 }
             }
         },

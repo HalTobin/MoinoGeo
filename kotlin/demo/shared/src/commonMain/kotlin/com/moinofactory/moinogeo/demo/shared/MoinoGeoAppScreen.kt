@@ -1,7 +1,7 @@
 package com.moinofactory.moinogeo.demo.shared
 
 import androidx.compose.runtime.Composable
-import com.moinofactory.moinogeo.core.MoinoGeoDatabase
+import com.moinofactory.moinogeo.core.domain.MoinoGeoService
 import com.moinofactory.moinogeo.demo.shared.flags.FlagsDemoScreen
 
 /**
@@ -11,6 +11,6 @@ import com.moinofactory.moinogeo.demo.shared.flags.FlagsDemoScreen
  * for map and database exploration demos as well.
  */
 @Composable
-fun MoinoGeoAppScreen(db: MoinoGeoDatabase) {
-    FlagsDemoScreen(db = db)
+fun MoinoGeoAppScreen(geo: MoinoGeoService) {
+    FlagsDemoScreen(geo = geo)
 }
