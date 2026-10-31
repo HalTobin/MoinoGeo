@@ -45,7 +45,6 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
     var countries by remember { mutableStateOf<List<CountryEntity>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedLibrary by remember { mutableStateOf(FlagLibraryType.LIPIS_RECTANGLE) }
-    var selectedSource by remember { mutableStateOf(AssetSourceMode.LOCAL_ASSETS) }
     var selectedViewMode by remember { mutableStateOf(FlagViewMode.GRID) }
     var inspectedCountry by remember { mutableStateOf<CountryEntity?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -129,15 +128,7 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
 
             FlagOptionsBar(
                 selectedViewMode = selectedViewMode,
-                selectedSource = selectedSource,
                 onViewModeSelected = { selectedViewMode = it },
-                onSourceToggle = {
-                    selectedSource = if (selectedSource == AssetSourceMode.CDN) {
-                        AssetSourceMode.LOCAL_ASSETS
-                    } else {
-                        AssetSourceMode.CDN
-                    }
-                },
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -165,13 +156,13 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
                 }
                 else -> {
                     Text(
-                        text = "Visualising ${filteredCountries.size} flags (${selectedSource.label}):",
+                        text = "Visualising ${filteredCountries.size} flags:",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
 
-                    val activeProvider = selectedLibrary.getProvider(selectedSource)
+                    val activeProvider = selectedLibrary.getProvider()
 
                     when (selectedViewMode) {
                         FlagViewMode.GRID -> {
@@ -191,7 +182,6 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
                         FlagViewMode.COMPARE -> {
                             FlagComparisonVisualizer(
                                 countries = filteredCountries,
-                                sourceMode = selectedSource,
                                 onCountryClick = { inspectedCountry = it },
                             )
                         }
@@ -204,7 +194,6 @@ fun FlagsDemoScreen(db: MoinoGeoDatabase) {
     inspectedCountry?.let { country ->
         FlagDetailDialog(
             country = country,
-            sourceMode = selectedSource,
             onDismiss = { inspectedCountry = null },
         )
     }

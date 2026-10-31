@@ -29,7 +29,6 @@ import com.moinofactory.moinogeo.flags.FlagIcon
 @Composable
 fun FlagDetailDialog(
     country: CountryEntity,
-    sourceMode: AssetSourceMode,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -59,7 +58,7 @@ fun FlagDetailDialog(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             FlagIcon(
                                 iso2Code = country.iso2,
-                                provider = library.getProvider(sourceMode),
+                                provider = library.getProvider(),
                                 modifier = Modifier.size(56.dp, 42.dp),
                             )
                             Spacer(modifier = Modifier.height(4.dp))

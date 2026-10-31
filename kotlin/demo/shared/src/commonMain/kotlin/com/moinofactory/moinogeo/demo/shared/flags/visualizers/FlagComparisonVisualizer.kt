@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moinofactory.moinogeo.core.model.CountryEntity
-import com.moinofactory.moinogeo.demo.shared.flags.AssetSourceMode
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -36,7 +35,6 @@ import com.moinofactory.moinogeo.flags.FlagIcon
 @Composable
 fun FlagComparisonVisualizer(
     countries: List<CountryEntity>,
-    sourceMode: AssetSourceMode,
     onCountryClick: (CountryEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -81,7 +79,7 @@ fun FlagComparisonVisualizer(
                                 ) {
                                     FlagIcon(
                                         iso2Code = country.iso2,
-                                        provider = library.getProvider(sourceMode),
+                                        provider = library.getProvider(),
                                         modifier = Modifier.size(48.dp, 34.dp),
                                     )
                                 }
