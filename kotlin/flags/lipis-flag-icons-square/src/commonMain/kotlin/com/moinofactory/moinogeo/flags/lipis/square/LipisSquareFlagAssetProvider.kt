@@ -9,7 +9,7 @@ import com.moinofactory.moinogeo.flags.UriFlagAssetProvider
  * Square (1×1) flag icons from [lipis/flag-icons](https://github.com/lipis/flag-icons).
  *
  * Optimized assets go in `src/commonMain/resources/flags-lipis-square/` via
- * `scripts/optimize_flags.py`.
+ * `scripts/flags/export_kotlin.py`.
  */
 class LipisSquareFlagAssetProvider(
     basePath: String = DEFAULT_ANDROID_ASSET_PATH,

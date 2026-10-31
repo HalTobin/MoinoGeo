@@ -25,26 +25,23 @@ python3 scripts/build_database.py \
 
 ---
 
-## 2. Flag Icon Minifier (`optimize_flags.py`)
+## 2. Flag SVG exporters (`scripts/flags/`)
 
-Minifies SVG vector flag icons from upstream icon repositories (**`lipis/flag-icons`**, **`flagpack-core`**, **`circle-flags`**) and standardizes filenames to lowercase ISO 3166-1 alpha-2 codes.
+Exports ISO 3166-1 alpha-2 flag SVGs from `data/flags/` into the Kotlin flag modules (shared lossless optimizer; iOS stub ready for a Swift package).
 
 ### Features
-- Strips XML metadata, comments, doctypes, and redundant formatting whitespace.
-- Standardizes output paths for each swappable icon module (`flags-lipis/`, `flags-flagpack/`, `flags-circle/`).
-- Achieves ~70%+ file size reduction per vector SVG.
+- Strips comments, XML prolog, DOCTYPE, `<metadata>`, and inter-tag whitespace only (no geometry / precision changes).
+- Writes into each swappable module’s `commonMain/resources/` folder (`flags-flagpack/`, `flags-circle/`, `flags-lipis-square/`, `flags-lipis-rectangle/`).
+- Normalizes filenames to lowercase `xx.svg`.
 
 ### Usage
 ```bash
-# Minify lipis flags
-python3 scripts/optimize_flags.py --input data/raw-flags/lipis/ --output kotlin/flags-lipis/src/commonMain/resources/flags-lipis/
-
-# Minify flagpack flags
-python3 scripts/optimize_flags.py --input data/raw-flags/flagpack/ --output kotlin/flags-flagpack/src/commonMain/resources/flags-flagpack/
-
-# Minify circle flags
-python3 scripts/optimize_flags.py --input data/raw-flags/circle/ --output kotlin/flags-circle/src/commonMain/resources/flags-circle/
+python3 scripts/flags/export_kotlin.py
+python3 scripts/flags/export_kotlin.py --dry-run
+python3 scripts/flags/export_kotlin.py --only yummygum-flagpack lipis-square --clean
 ```
+
+See [`scripts/flags/README.md`](../scripts/flags/README.md).
 
 ---
 

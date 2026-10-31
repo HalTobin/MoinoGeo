@@ -25,18 +25,17 @@ python3 scripts/build_database.py --input path/to/countries+states+cities.json -
 
 ---
 
-## 2. Flag Icon Minifier (`optimize_flags.py`)
+## 2. Flag SVG exporters (`scripts/flags/`)
 
-Minifies SVG vector flag icons from [`lipis/flag-icons`](https://github.com/lipis/flag-icons) and standardizes filenames to lowercase ISO 3166-1 alpha-2 codes.
+Copies ISO 3166-1 alpha-2 flag SVGs from [`data/flags/`](../data/flags/) into Kotlin (and later iOS) modules. Shared lossless cleanup lives in `scripts/flags/common/`; destinations are platform-specific.
 
-### Features
-- Strips XML metadata, comments, doctypes, and redundant formatting whitespace.
-- Standardizes output paths (`data/flags/us.svg`, `data/flags/de.svg`, etc.).
-- Achieves ~70%+ file size reduction per vector SVG.
+See [`scripts/flags/README.md`](flags/README.md) for flag-set mapping and options.
 
 ### Usage
 ```bash
-python3 scripts/optimize_flags.py --input path/to/lipis_flags/ --output data/flags/
+python3 scripts/flags/export_kotlin.py
+python3 scripts/flags/export_kotlin.py --dry-run
+python3 scripts/flags/export_kotlin.py --only yummygum-flagpack lipis-square
 ```
 
 ---

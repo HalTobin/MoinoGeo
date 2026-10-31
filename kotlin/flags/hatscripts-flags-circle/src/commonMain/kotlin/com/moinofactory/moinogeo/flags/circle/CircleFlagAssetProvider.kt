@@ -10,7 +10,7 @@ import com.moinofactory.moinogeo.flags.UriFlagAssetProvider
  * (circular 1×1 SVGs).
  *
  * Optimized assets are written to `src/commonMain/resources/flags-circle/` by
- * `scripts/optimize_flags.py`. Until that pipeline has been run, this module
+ * `scripts/flags/export_kotlin.py`. Until that pipeline has been run, this module
  * is a planned stub — wire [CircleFlagAssetProvider] once SVGs are present,
  * or use [ComposeResourceFlagAssetProvider] / a custom [FlagAssetProvider].
  */
