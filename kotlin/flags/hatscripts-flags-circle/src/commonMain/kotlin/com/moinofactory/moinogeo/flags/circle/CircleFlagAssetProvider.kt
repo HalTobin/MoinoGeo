@@ -1,6 +1,7 @@
 package com.moinofactory.moinogeo.flags.circle
 
 import com.moinofactory.moinogeo.flags.AndroidAssetFlagAssetProvider
+import com.moinofactory.moinogeo.flags.ClasspathFlagAssetProvider
 import com.moinofactory.moinogeo.flags.ComposeResourceFlagAssetProvider
 import com.moinofactory.moinogeo.flags.FlagAssetProvider
 import com.moinofactory.moinogeo.flags.UriFlagAssetProvider
@@ -25,6 +26,10 @@ class CircleFlagAssetProvider(
         /** Android `assets/flags-circle/<iso2>.svg`. */
         fun androidAssets(): FlagAssetProvider =
             AndroidAssetFlagAssetProvider(ASSET_DIRECTORY)
+
+        /** Bundled `commonMain/resources/flags-circle/<iso2>.svg`. */
+        fun classpathAssets(): FlagAssetProvider =
+            ClasspathFlagAssetProvider(ASSET_DIRECTORY)
 
         /**
          * Compose Multiplatform / custom resource resolver.

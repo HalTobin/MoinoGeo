@@ -17,6 +17,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(projects.shared)
+            implementation(projects.core)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
 
             implementation(compose.desktop.currentOs)
         }

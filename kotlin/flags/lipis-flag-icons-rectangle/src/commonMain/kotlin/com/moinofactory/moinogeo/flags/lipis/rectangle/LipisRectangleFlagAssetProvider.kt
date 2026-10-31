@@ -1,6 +1,7 @@
 package com.moinofactory.moinogeo.flags.lipis.rectangle
 
 import com.moinofactory.moinogeo.flags.AndroidAssetFlagAssetProvider
+import com.moinofactory.moinogeo.flags.ClasspathFlagAssetProvider
 import com.moinofactory.moinogeo.flags.ComposeResourceFlagAssetProvider
 import com.moinofactory.moinogeo.flags.FlagAssetProvider
 import com.moinofactory.moinogeo.flags.UriFlagAssetProvider
@@ -21,6 +22,10 @@ class LipisRectangleFlagAssetProvider(
 
         fun androidAssets(): FlagAssetProvider =
             AndroidAssetFlagAssetProvider(ASSET_DIRECTORY)
+
+        /** Bundled `commonMain/resources/flags-lipis-rectangle/<iso2>.svg`. */
+        fun classpathAssets(): FlagAssetProvider =
+            ClasspathFlagAssetProvider(ASSET_DIRECTORY)
 
         fun composeResources(resolve: (iso2Code: String) -> Any): FlagAssetProvider =
             ComposeResourceFlagAssetProvider(resolve)

@@ -13,12 +13,12 @@ fun main() = application {
     val db = createDatabase()
     Window(
         onCloseRequest = ::exitApplication,
-        title = "MoinoGeo JVM Demo"
+        title = "MoinoGeo JVM Demo",
     ) {
         MaterialTheme {
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
+                color = MaterialTheme.colorScheme.background,
             ) {
                 MoinoGeoAppScreen(db)
             }

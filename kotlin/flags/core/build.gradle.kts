@@ -29,6 +29,12 @@ kotlin {
             implementation(libs.coil.svg)
         }
 
+        val iosMain = create("iosMain") {
+            dependsOn(commonMain.get())
+        }
+        getByName("iosArm64Main").dependsOn(iosMain)
+        getByName("iosSimulatorArm64Main").dependsOn(iosMain)
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

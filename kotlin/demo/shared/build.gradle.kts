@@ -34,12 +34,15 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.room.runtime)
-            implementation(libs.sqlite.bundled)
+            api(libs.room.runtime)
+            api(libs.sqlite.bundled)
 
-            implementation(projects.core)
+            api(projects.core)
             implementation(projects.flags.core)
             implementation(projects.flags.lipisFlagIconsRectangle)
+            implementation(projects.flags.lipisFlagIconsSquare)
+            implementation(projects.flags.yummygumFlagpack)
+            implementation(projects.flags.hatscriptsFlagsCircle)
         }
 
         commonTest.dependencies {

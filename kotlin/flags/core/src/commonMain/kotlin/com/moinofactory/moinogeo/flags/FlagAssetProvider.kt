@@ -59,3 +59,19 @@ class ComposeResourceFlagAssetProvider(
 ) : FlagAssetProvider {
     override fun getFlagData(iso2Code: String): Any = resolve(iso2Code.lowercase())
 }
+
+/**
+ * Loads flags packaged under `src/commonMain/resources/<directory>/`.
+ *
+ * Example: resources at `flags-lipis-square/us.svg` →
+ * `ClasspathFlagAssetProvider("flags-lipis-square")`.
+ */
+class ClasspathFlagAssetProvider(
+    private val assetDirectory: String,
+) : FlagAssetProvider {
+    override fun getFlagData(iso2Code: String): Any {
+        val directory = assetDirectory.trim('/')
+        val path = "$directory/${iso2Code.lowercase()}.svg"
+        return readClasspathResource(path) ?: ByteArray(0)
+    }
+}

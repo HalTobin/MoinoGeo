@@ -10,7 +10,3 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.ksp) apply false
 }
-
-tasks.register("clean", Delete::class) {
-    delete(layout.buildDirectory)
-}
