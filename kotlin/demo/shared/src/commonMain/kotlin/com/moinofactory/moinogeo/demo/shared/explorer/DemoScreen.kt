@@ -1,0 +1,192 @@
+package com.moinofactory.moinogeo.demo.shared.explorer
+
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moinofactory.moinogeo.core.domain.MoinoGeoService
+import com.moinofactory.moinogeo.demo.shared.explorer.components.CountryListPane
+import com.moinofactory.moinogeo.demo.shared.explorer.components.FlagSettingsDialog
+import com.moinofactory.moinogeo.demo.shared.explorer.components.MapPlaceholder
+import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchBar
+import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchDialog
+import com.moinofactory.moinogeo.demo.shared.flags.FlagDetailDialog
+import com.moinofactory.moinogeo.demo.shared.ui.StatusBanner
+
+private val ExpandedWidthBreakpoint = 840.dp
+
+/**
+ * Adaptive geo explorer demo: map + search + country list on large screens,
+ * search + map on compact screens.
+ */
+@Composable
+fun DemoScreen(geo: MoinoGeoService) {
+    val demoViewModel: DemoViewModel = viewModel { DemoViewModel(geo) }
+    val state by demoViewModel.state.collectAsStateWithLifecycle()
+    DemoScreenContent(
+        state = state,
+        onAction = demoViewModel::onAction,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DemoScreenContent(
+    state: DemoState,
+    onAction: (DemoAction) -> Unit,
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "MoinoGeo",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "Geo explorer demo",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { onAction(DemoAction.OpenSettings) }) {
+                        Text("Settings")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
+            )
+        },
+    ) { padding ->
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+        ) {
+            val isExpanded = maxWidth >= ExpandedWidthBreakpoint
+
+            Column(modifier = Modifier.fillMaxSize()) {
+                state.statusMessage?.let { StatusBanner(message = it) }
+
+                if (isExpanded) {
+                    ExpandedDemoLayout(state = state, onAction = onAction)
+                } else {
+                    CompactDemoLayout(state = state, onAction = onAction)
+                }
+            }
+        }
+    }
+
+    if (state.isSearchOpen) {
+        PlaceSearchDialog(
+            query = state.searchQuery,
+            results = state.searchResults,
+            isSearching = state.isSearching,
+            onQueryChange = { onAction(DemoAction.SearchQueryChanged(it)) },
+            onSubmit = { onAction(DemoAction.SearchSubmit) },
+            onPlaceSelected = { onAction(DemoAction.SelectPlace(it)) },
+            onDismiss = { onAction(DemoAction.CloseSearch) },
+        )
+    }
+
+    if (state.isSettingsOpen) {
+        FlagSettingsDialog(
+            selectedLibrary = state.selectedLibrary,
+            selectedViewMode = state.selectedViewMode,
+            onLibrarySelected = { onAction(DemoAction.SelectFlagLibrary(it)) },
+            onViewModeSelected = { onAction(DemoAction.SelectViewMode(it)) },
+            onDismiss = { onAction(DemoAction.CloseSettings) },
+        )
+    }
+
+    state.inspectedCountry?.let { country ->
+        FlagDetailDialog(
+            country = country,
+            onDismiss = { onAction(DemoAction.DismissCountryDetail) },
+        )
+    }
+}
+
+@Composable
+private fun ExpandedDemoLayout(
+    state: DemoState,
+    onAction: (DemoAction) -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        MapPlaceholder(
+            selectedPlace = state.selectedPlace,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        ) {
+            PlaceSearchBar(
+                query = state.searchQuery,
+                onOpenSearch = { onAction(DemoAction.OpenSearch) },
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            CountryListPane(
+                countries = state.countries,
+                isLoading = state.isLoadingCountries,
+                selectedLibrary = state.selectedLibrary,
+                selectedViewMode = state.selectedViewMode,
+                onCountryClick = { onAction(DemoAction.InspectCountry(it)) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactDemoLayout(
+    state: DemoState,
+    onAction: (DemoAction) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        PlaceSearchBar(
+            query = state.searchQuery,
+            onOpenSearch = { onAction(DemoAction.OpenSearch) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        MapPlaceholder(
+            selectedPlace = state.selectedPlace,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        )
+    }
+}
