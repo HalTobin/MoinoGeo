@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -21,9 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.maps.core.GeoPoint
@@ -118,19 +118,27 @@ internal object MapScopeInstance : MapScope {
         content: (@Composable MarkerScope.() -> Unit)?,
     ) {
         val proj = LocalMapProjection.current
-        val offset = proj.toOffset(position)
+        val anchor = proj.toOffset(position)
         Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
-                    .wrapContentSize(align = Alignment.BottomCenter, unbounded = true),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                DefaultMapMarkerPin(
-                    content = content?.let { block ->
-                        { MarkerScopeInstance.block() }
-                    },
-                )
+            Layout(
+                content = {
+                    DefaultMapMarkerPin(
+                        content = content?.let { block ->
+                            { MarkerScopeInstance.block() }
+                        },
+                    )
+                },
+                modifier = Modifier.offset {
+                    IntOffset(anchor.x.roundToInt(), anchor.y.roundToInt())
+                },
+            ) { measurables, _ ->
+                val placeable = measurables.first().measure(Constraints())
+                layout(0, 0) {
+                    placeable.place(
+                        x = -placeable.width / 2,
+                        y = -placeable.height,
+                    )
+                }
             }
         }
     }
@@ -144,17 +152,13 @@ internal object MapScopeInstance : MapScope {
         borderWidth: Float,
     ) {
         val proj = LocalMapProjection.current
+        val radiusPx = proj.metersToPixels(radiusMeters, center.latitude)
         Canvas(modifier = Modifier.fillMaxSize()) {
+            if (radiusPx <= 0f) return@Canvas
             for (tx in MapProjection.HorizontalWrapTiles) {
                 val screenCenter = proj.toOffsetOnTile(center, tx)
-                val radiusPx = proj.metersToPixels(radiusMeters, center.latitude)
-                if (radiusPx <= 0f) continue
                 if (fillColor.alpha > 0f) {
-                    drawCircle(
-                        color = fillColor,
-                        radius = radiusPx,
-                        center = screenCenter,
-                    )
+                    drawCircle(color = fillColor, radius = radiusPx, center = screenCenter)
                 }
                 if (borderWidth > 0f && borderColor.alpha > 0f) {
                     drawCircle(
@@ -179,18 +183,25 @@ internal object MapScopeInstance : MapScope {
         val proj = LocalMapProjection.current
         Canvas(modifier = Modifier.fillMaxSize()) {
             for (tx in MapProjection.HorizontalWrapTiles) {
-                val tiled = proj.copy(offsetX = proj.offsetX + tx * proj.worldWidth)
-                for (polygon in geometries) {
-                    val path = polygon.toPath(tiled) ?: continue
-                    if (fillColor.alpha > 0f) {
-                        drawPath(path = path, color = fillColor)
-                    }
-                    if (borderWidth > 0f && borderColor.alpha > 0f) {
-                        drawPath(
-                            path = path,
-                            color = borderColor,
-                            style = Stroke(width = borderWidth),
-                        )
+                val band = proj.clipRectForTile(tx)
+                clipRect(
+                    left = band.left,
+                    top = band.top,
+                    right = band.right,
+                    bottom = band.bottom,
+                ) {
+                    for (polygon in geometries) {
+                        val path = polygon.toPath(proj, tx) ?: continue
+                        if (fillColor.alpha > 0f) {
+                            drawPath(path = path, color = fillColor)
+                        }
+                        if (borderWidth > 0f && borderColor.alpha > 0f) {
+                            drawPath(
+                                path = path,
+                                color = borderColor,
+                                style = Stroke(width = borderWidth),
+                            )
+                        }
                     }
                 }
             }
@@ -238,45 +249,4 @@ internal fun ProvideMapProjection(
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(LocalMapProjection provides projection, content = content)
-}
-
-internal fun GeoPolygon.toPath(projection: MapProjection): Path? {
-    if (outerBounds.size < 3) return null
-    val path = Path().apply { fillType = PathFillType.EvenOdd }
-    appendRing(path, outerBounds, projection)
-    for (hole in innerHoles) {
-        if (hole.size >= 3) appendRing(path, hole, projection)
-    }
-    return path
-}
-
-private fun appendRing(
-    path: Path,
-    ring: List<GeoPoint>,
-    projection: MapProjection,
-) {
-    // Primary tile only — callers that need wrap draw multiple projections.
-    val start = projection.toOffsetOnTile(ring.first(), tileX = 0)
-    path.moveTo(start.x, start.y)
-    for (i in 1 until ring.size) {
-        val p = projection.toOffsetOnTile(ring[i], tileX = 0)
-        path.lineTo(p.x, p.y)
-    }
-    path.close()
-}
-
-/** Simple mean of all outer-ring vertices (good enough for overlay anchors). */
-internal fun List<GeoPolygon>.approximateCenter(): GeoPoint? {
-    var lat = 0.0
-    var lon = 0.0
-    var count = 0
-    for (polygon in this) {
-        for (point in polygon.outerBounds) {
-            lat += point.latitude
-            lon += point.longitude
-            count++
-        }
-    }
-    if (count == 0) return null
-    return GeoPoint(latitude = lat / count, longitude = lon / count)
 }

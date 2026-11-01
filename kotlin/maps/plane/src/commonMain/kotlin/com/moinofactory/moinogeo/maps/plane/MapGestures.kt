@@ -7,15 +7,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 private const val WheelZoomFactor = 1.12f
-private const val DoubleTapZoomFactor = 1.6f
 
 /**
- * Pan (drag / pinch-pan), pinch-zoom, mouse-wheel zoom, and double-tap zoom,
- * all focused on the pointer / gesture centroid.
+ * Pan (drag / pinch-pan), pinch-zoom, mouse-wheel zoom, and animated
+ * double-tap zoom toggle — all focused on the pointer / gesture centroid.
  */
-internal fun Modifier.mapGestures(state: PlaneMapState): Modifier =
+internal fun Modifier.mapGestures(
+    state: PlaneMapState,
+    scope: CoroutineScope,
+): Modifier =
     this
         .pointerInput(state) {
             detectTransformGestures { centroid, pan, zoomFactor, _ ->
@@ -27,10 +31,12 @@ internal fun Modifier.mapGestures(state: PlaneMapState): Modifier =
                 }
             }
         }
-        .pointerInput(state) {
+        .pointerInput(state, scope) {
             detectTapGestures(
                 onDoubleTap = { pos ->
-                    state.zoomAt(pos.x, pos.y, DoubleTapZoomFactor)
+                    scope.launch {
+                        state.animateDoubleTapZoom(pos.x, pos.y)
+                    }
                 },
             )
         }
