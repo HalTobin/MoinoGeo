@@ -8,7 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.toSize
 import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
@@ -22,8 +21,8 @@ import com.moinofactory.moinogeo.maps.topography.DefaultTopographyProvider
  * 2D equirectangular map. Base layers come from [mapStyle] + providers;
  * overlays are declared in [content] via [MapScope] (`Marker`, `Circle`, `Area`).
  *
- * Horizontal looping draws three clipped world copies so oceans / Antarctica
- * keep stable fills (no longitude-unwrap of wide polygons).
+ * Horizontal looping draws three world copies. Paths unwrap antimeridian rings
+ * so oceans / Antarctica keep stable fills without per-tile X clipping.
  */
 @Composable
 fun PlaneMap(
@@ -72,47 +71,39 @@ fun PlaneMap(
             drawRect(color = waterColor)
 
             for (tx in MapProjection.HorizontalWrapTiles) {
-                val band = proj.clipRectForTile(tx)
-                clipRect(
-                    left = band.left,
-                    top = band.top,
-                    right = band.right,
-                    bottom = band.bottom,
-                ) {
-                    if (mapStyle.showTopography) {
-                        // Land / ice / etc. (ocean is canvas background).
+                if (mapStyle.showTopography) {
+                    // Land / ice / etc. (ocean is canvas background).
+                    for (feature in topoData.features) {
+                        if (feature.zone == TopoZone.WATER) continue
+                        val zoneStyle = mapStyle.zoneStyles[feature.zone]
+                            ?: mapStyle.zoneStyles[TopoZone.NEUTRAL]
+                            ?: continue
+                        val path = feature.geometry.toPath(proj, tx) ?: continue
+                        drawPath(path = path, color = zoneStyle.fillColor)
+                    }
+                    // Lakes only — skip the world ocean shell (holes would
+                    // paint over continents; canvas already provides ocean).
+                    val waterStyle = mapStyle.zoneStyles[TopoZone.WATER]
+                    if (waterStyle != null) {
                         for (feature in topoData.features) {
-                            if (feature.zone == TopoZone.WATER) continue
-                            val zoneStyle = mapStyle.zoneStyles[feature.zone]
-                                ?: mapStyle.zoneStyles[TopoZone.NEUTRAL]
-                                ?: continue
+                            if (feature.zone != TopoZone.WATER) continue
+                            if (feature.geometry.isWorldSpanning()) continue
                             val path = feature.geometry.toPath(proj, tx) ?: continue
-                            drawPath(path = path, color = zoneStyle.fillColor)
-                        }
-                        // Lakes only — skip the world ocean shell (holes would
-                        // paint over continents; canvas already provides ocean).
-                        val waterStyle = mapStyle.zoneStyles[TopoZone.WATER]
-                        if (waterStyle != null) {
-                            for (feature in topoData.features) {
-                                if (feature.zone != TopoZone.WATER) continue
-                                if (feature.geometry.isWorldSpanning()) continue
-                                val path = feature.geometry.toPath(proj, tx) ?: continue
-                                drawPath(path = path, color = waterStyle.fillColor)
-                            }
+                            drawPath(path = path, color = waterStyle.fillColor)
                         }
                     }
+                }
 
-                    if (mapStyle.showBorders) {
-                        val strokeWidth = mapStyle.borderStyle.lineWidth * state.zoom
-                        for (feature in boundaryData.features) {
-                            for (polygon in feature.geometries) {
-                                val path = polygon.toBorderPath(proj, tx) ?: continue
-                                drawPath(
-                                    path = path,
-                                    color = mapStyle.borderStyle.lineColor,
-                                    style = Stroke(width = strokeWidth),
-                                )
-                            }
+                if (mapStyle.showBorders) {
+                    val strokeWidth = mapStyle.borderStyle.lineWidth * state.zoom
+                    for (feature in boundaryData.features) {
+                        for (polygon in feature.geometries) {
+                            val path = polygon.toBorderPath(proj, tx) ?: continue
+                            drawPath(
+                                path = path,
+                                color = mapStyle.borderStyle.lineColor,
+                                style = Stroke(width = strokeWidth),
+                            )
                         }
                     }
                 }

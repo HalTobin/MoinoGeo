@@ -6,40 +6,82 @@ import androidx.compose.ui.graphics.PathFillType
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.GeoPolygon
 import kotlin.math.abs
+import kotlin.math.floor
 
 /**
  * Builds a filled path for world copy [tileX].
  *
- * Ring longitudes are unwrapped in map space so antimeridian edges stay short.
- * South-polar continents (Antarctica) close along the bottom of the map instead
- * of across the Southern Ocean. Caller clips to the tile's horizontal band.
+ * Longitudes are unwrapped in map space so antimeridian / polar rings stay
+ * continuous. South-polar continents close along the bottom of the map.
+ * Draw [MapProjection.HorizontalWrapTiles] shifted copies without per-tile X
+ * clip bands — unwrapped polar geometry often extends past one world width and
+ * needs the neighbouring copy to paint inside the primary viewport.
  */
 internal fun GeoPolygon.toPath(projection: MapProjection, tileX: Int): Path? {
     if (outerBounds.size < 3) return null
     val path = Path().apply { fillType = PathFillType.NonZero }
-    if (!appendRing(path, outerBounds, projection, tileX, closeForFill = true)) return null
+    if (!appendFillRing(path, outerBounds, projection, tileX)) return null
     for (hole in innerHoles) {
         if (hole.size >= 3) {
-            appendRing(path, hole.asReversed(), projection, tileX, closeForFill = true)
+            appendFillRing(path, hole.asReversed(), projection, tileX)
         }
     }
     return path
 }
 
+/**
+ * Stroked outline for [tileX]. Skips artificial antimeridian cut edges (the
+ * vertical lines Natural Earth inserts where a country was split at ±180°).
+ */
 internal fun GeoPolygon.toBorderPath(projection: MapProjection, tileX: Int): Path? {
     if (outerBounds.size < 2) return null
+    val worldWidth = projection.worldWidth
+    val worldHeight = projection.worldHeight
+    if (worldWidth <= 0f || worldHeight <= 0f) return null
+
+    val ring = outerBounds
+    val mapPts = unwrapRingToMap(ring, worldWidth, worldHeight)
+    if (mapPts.size < 2) return null
+
+    // mapPts[i] corresponds to ring[i] (duplicate close vertex already dropped).
+    val shiftX = tileX * worldWidth
     val path = Path()
-    // Strokes follow the coast only — no synthetic polar closing edge.
-    if (!appendRing(path, outerBounds, projection, tileX, closeForFill = false)) return null
+    var penDown = false
+
+    fun screenAt(i: Int): Offset =
+        projection.mapToScreen(mapPts[i].x + shiftX, mapPts[i].y)
+
+    for (i in mapPts.indices) {
+        if (i > 0 && isAntimeridianEdge(ring[i - 1], ring[i])) {
+            penDown = false
+            continue
+        }
+        val screen = screenAt(i)
+        if (!penDown) {
+            path.moveTo(screen.x, screen.y)
+            penDown = true
+        } else {
+            path.lineTo(screen.x, screen.y)
+        }
+    }
+
+    // Re-close short rings unless the closing edge is the dateline cut.
+    if (penDown && sameGeo(ring.first(), ring.last())) {
+        val from = ring[mapPts.lastIndex]
+        val to = ring.first()
+        if (!isAntimeridianEdge(from, to)) {
+            val start = screenAt(0)
+            path.lineTo(start.x, start.y)
+        }
+    }
     return path
 }
 
-private fun appendRing(
+private fun appendFillRing(
     path: Path,
     ring: List<GeoPoint>,
     projection: MapProjection,
     tileX: Int,
-    closeForFill: Boolean,
 ): Boolean {
     val worldWidth = projection.worldWidth
     val worldHeight = projection.worldHeight
@@ -61,9 +103,7 @@ private fun appendRing(
     val xGap = last.x - first.x
     val wrapsFar = abs(xGap) > worldWidth * 0.5f
     when {
-        closeForFill && wrapsFar && isSouthPolarRing(ring) -> {
-            // Close via the south edge so fill is the polar continent, not a
-            // band across the Southern Ocean.
+        wrapsFar && isSouthPolarRing(ring) -> {
             val south = screen(Offset(last.x, worldHeight))
             path.lineTo(south.x, south.y)
             val southFirst = screen(Offset(first.x, worldHeight))
@@ -71,7 +111,7 @@ private fun appendRing(
             val back = screen(first)
             path.lineTo(back.x, back.y)
         }
-        closeForFill && wrapsFar && isNorthPolarRing(ring) -> {
+        wrapsFar && isNorthPolarRing(ring) -> {
             val north = screen(Offset(last.x, 0f))
             path.lineTo(north.x, north.y)
             val northFirst = screen(Offset(first.x, 0f))
@@ -79,21 +119,19 @@ private fun appendRing(
             val back = screen(first)
             path.lineTo(back.x, back.y)
         }
-        closeForFill && wrapsFar -> {
-            // Non-polar wrap: close to the unwrapped image of the start point.
+        wrapsFar -> {
             val image = screen(Offset(first.x + xGap, first.y))
             path.lineTo(image.x, image.y)
         }
-        !wrapsFar -> path.close()
-        // Stroke of a dateline-crossing ring: leave open — a close() edge
-        // would draw a false border across the ocean.
+        else -> path.close()
     }
     return true
 }
 
 /**
  * Equirectangular map coordinates with consecutive X unwrapped so edges stay
- * short. Closed rings drop the duplicate last vertex.
+ * short. Closed rings drop the duplicate last vertex. Result is shifted so
+ * `minX ∈ [0, worldWidth)` to keep polar rings overlapping the primary world.
  */
 internal fun unwrapRingToMap(
     ring: List<GeoPoint>,
@@ -117,10 +155,9 @@ internal fun unwrapRingToMap(
         var x = MapProjection.longitudeToMapX(ring[i].longitude, worldWidth)
         val y = MapProjection.latitudeToMapY(lat, worldHeight)
 
-        // Pole singularity: all longitudes meet — keep X continuous instead of
-        // drawing a full-width edge along the top/bottom of the map mid-ring.
         val prevLat = ring[i - 1].latitude
         if (abs(prevLat) >= 89.9 && abs(lat) >= 89.9) {
+            // Pole singularity — don't draw a full-width mid-ring edge.
             x = prevX
         } else {
             while (x - prevX > half) x -= worldWidth
@@ -134,7 +171,23 @@ internal fun unwrapRingToMap(
     if (out.size >= 2 && sameGeo(ring.first(), ring.last())) {
         out.removeAt(out.lastIndex)
     }
+    if (out.isEmpty()) return out
+
+    val minX = out.minOf { it.x }
+    val normalize = floor(minX / worldWidth.toDouble()).toFloat() * worldWidth
+    if (normalize != 0f) {
+        for (i in out.indices) {
+            out[i] = Offset(out[i].x - normalize, out[i].y)
+        }
+    }
     return out
+}
+
+/** Natural Earth cut edge along ±180° (draws as a vertical line on equirectangular). */
+internal fun isAntimeridianEdge(a: GeoPoint, b: GeoPoint, epsilonDeg: Double = 1e-3): Boolean {
+    val aOn = abs(abs(a.longitude) - 180.0) <= epsilonDeg
+    val bOn = abs(abs(b.longitude) - 180.0) <= epsilonDeg
+    return aOn && bOn
 }
 
 private fun sameGeo(a: GeoPoint, b: GeoPoint): Boolean =

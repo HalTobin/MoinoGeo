@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -183,21 +182,16 @@ internal object MapScopeInstance : MapScope {
         val proj = LocalMapProjection.current
         Canvas(modifier = Modifier.fillMaxSize()) {
             for (tx in MapProjection.HorizontalWrapTiles) {
-                val band = proj.clipRectForTile(tx)
-                clipRect(
-                    left = band.left,
-                    top = band.top,
-                    right = band.right,
-                    bottom = band.bottom,
-                ) {
-                    for (polygon in geometries) {
-                        val path = polygon.toPath(proj, tx) ?: continue
-                        if (fillColor.alpha > 0f) {
-                            drawPath(path = path, color = fillColor)
+                for (polygon in geometries) {
+                    if (fillColor.alpha > 0f) {
+                        polygon.toPath(proj, tx)?.let { fill ->
+                            drawPath(path = fill, color = fillColor)
                         }
-                        if (borderWidth > 0f && borderColor.alpha > 0f) {
+                    }
+                    if (borderWidth > 0f && borderColor.alpha > 0f) {
+                        polygon.toBorderPath(proj, tx)?.let { stroke ->
                             drawPath(
-                                path = path,
+                                path = stroke,
                                 color = borderColor,
                                 style = Stroke(width = borderWidth),
                             )

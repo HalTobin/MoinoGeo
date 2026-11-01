@@ -122,6 +122,47 @@ class MapProjectionTest {
     }
 
     @Test
+    fun unwrapNormalizesIntoPrimaryWorld() {
+        // Ring starting on the antimeridian (like NE Antarctica) unwraps into
+        // [w, 2w] before normalize — must shift back so minX ∈ [0, w).
+        val ring = listOf(
+            GeoPoint(-84.0, 180.0),
+            GeoPoint(-90.0, 180.0),
+            GeoPoint(-90.0, -180.0),
+            GeoPoint(-84.0, -180.0),
+            GeoPoint(-70.0, -90.0),
+            GeoPoint(-70.0, 0.0),
+            GeoPoint(-70.0, 90.0),
+            GeoPoint(-84.0, 180.0),
+        )
+        val map = unwrapRingToMap(ring, worldWidth = 360f, worldHeight = 180f)
+        val minX = map.minOf { it.x }
+        assertTrue(minX >= -0.01f && minX < 360f, "minX=$minX")
+    }
+
+    @Test
+    fun antimeridianEdgeDetected() {
+        assertTrue(
+            isAntimeridianEdge(
+                GeoPoint(65.0, 180.0),
+                GeoPoint(70.0, 180.0),
+            ),
+        )
+        assertTrue(
+            isAntimeridianEdge(
+                GeoPoint(65.0, -180.0),
+                GeoPoint(70.0, 180.0),
+            ),
+        )
+        assertFalse(
+            isAntimeridianEdge(
+                GeoPoint(65.0, 179.0),
+                GeoPoint(70.0, 178.0),
+            ),
+        )
+    }
+
+    @Test
     fun worldSpanningDetectsOceanShell() {
         val ocean = GeoPolygon(
             outerBounds = listOf(
