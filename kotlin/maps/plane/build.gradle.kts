@@ -21,9 +21,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.maps.core)
-            implementation(projects.maps.countries)
-            implementation(projects.maps.topography)
+            // api: PlaneMap's public signature exposes types from these modules.
+            api(projects.maps.core)
+            api(projects.maps.countries)
+            api(projects.maps.topography)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)

@@ -43,6 +43,7 @@ kotlin {
             api(libs.sqlite.bundled)
 
             api(projects.core)
+            implementation(projects.maps.plane)
             implementation(projects.flags.core)
             implementation(projects.flags.lipisFlagIconsRectangle)
             implementation(projects.flags.lipisFlagIconsSquare)

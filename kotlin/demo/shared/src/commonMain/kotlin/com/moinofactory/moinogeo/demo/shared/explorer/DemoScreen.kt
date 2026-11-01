@@ -16,7 +16,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -29,7 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moinofactory.moinogeo.core.domain.MoinoGeoService
 import com.moinofactory.moinogeo.demo.shared.explorer.components.CountryListPane
 import com.moinofactory.moinogeo.demo.shared.explorer.components.FlagSettingsDialog
-import com.moinofactory.moinogeo.demo.shared.explorer.components.MapPlaceholder
+import com.moinofactory.moinogeo.demo.shared.explorer.components.DemoMap
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchBar
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchDialog
 import com.moinofactory.moinogeo.demo.shared.flags.FlagDetailDialog
@@ -145,7 +144,7 @@ private fun ExpandedDemoLayout(
     onAction: (DemoAction) -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
-        MapPlaceholder(
+        DemoMap(
             selectedPlace = state.selectedPlace,
             modifier = Modifier
                 .weight(1f)
@@ -194,7 +193,7 @@ private fun CompactDemoLayout(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        MapPlaceholder(
+        DemoMap(
             selectedPlace = state.selectedPlace,
             modifier = Modifier
                 .weight(1f)
