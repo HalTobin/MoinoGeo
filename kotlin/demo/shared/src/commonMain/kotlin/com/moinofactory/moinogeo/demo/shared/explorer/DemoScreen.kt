@@ -33,7 +33,6 @@ import com.moinofactory.moinogeo.demo.shared.explorer.components.MapPlaceholder
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchBar
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchDialog
 import com.moinofactory.moinogeo.demo.shared.flags.FlagDetailDialog
-import com.moinofactory.moinogeo.demo.shared.ui.StatusBanner
 import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
 import com.moinofactory.moinogeo.demo.shared.ui.icon.settings
 
@@ -101,8 +100,6 @@ internal fun DemoScreenContent(
             val isExpanded = maxWidth >= ExpandedWidthBreakpoint
 
             Column(modifier = Modifier.fillMaxSize()) {
-                state.statusMessage?.let { StatusBanner(message = it) }
-
                 if (isExpanded) {
                     ExpandedDemoLayout(state = state, onAction = onAction)
                 } else {
@@ -165,6 +162,9 @@ private fun ExpandedDemoLayout(
             PlaceSearchBar(
                 query = state.searchQuery,
                 onOpenSearch = { onAction(DemoAction.OpenSearch) },
+                onClear = if (state.searchQuery.isNotEmpty() || state.selectedPlace != null) {
+                    { onAction(DemoAction.ClearSearchAndSelection) }
+                } else null,
             )
             Spacer(modifier = Modifier.height(12.dp))
             CountryListPane(
@@ -188,6 +188,9 @@ private fun CompactDemoLayout(
         PlaceSearchBar(
             query = state.searchQuery,
             onOpenSearch = { onAction(DemoAction.OpenSearch) },
+            onClear = if (state.searchQuery.isNotEmpty() || state.selectedPlace != null) {
+                { onAction(DemoAction.ClearSearchAndSelection) }
+            } else null,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))

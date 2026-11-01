@@ -14,6 +14,7 @@ internal sealed class DemoAction {
     data class SearchQueryChanged(val query: String) : DemoAction()
     data object SearchSubmit : DemoAction()
     data class SelectPlace(val place: GeoPlace) : DemoAction()
+    data object ClearSearchAndSelection : DemoAction()
 
     data object OpenSettings : DemoAction()
     data object CloseSettings : DemoAction()

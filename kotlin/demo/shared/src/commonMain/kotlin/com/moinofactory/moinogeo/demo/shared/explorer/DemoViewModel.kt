@@ -59,6 +59,18 @@ internal class DemoViewModel(
                     )
                 }
             }
+            DemoAction.ClearSearchAndSelection -> {
+                searchJob?.cancel()
+                _state.update {
+                    it.copy(
+                        searchQuery = "",
+                        searchResults = emptyList(),
+                        isSearching = false,
+                        isSearchOpen = false,
+                        selectedPlace = null,
+                    )
+                }
+            }
 
             DemoAction.OpenSettings -> _state.update { it.copy(isSettingsOpen = true) }
             DemoAction.CloseSettings -> _state.update { it.copy(isSettingsOpen = false) }
@@ -135,7 +147,6 @@ internal class DemoViewModel(
                     _state.update {
                         it.copy(
                             countries = dbCountries,
-                            statusMessage = "Loaded ${dbCountries.size} countries from database",
                             isLoadingCountries = false,
                         )
                     }
@@ -143,7 +154,6 @@ internal class DemoViewModel(
                     _state.update {
                         it.copy(
                             countries = sampleCountries,
-                            statusMessage = "Using sample country dataset (${sampleCountries.size} countries)",
                             isLoadingCountries = false,
                         )
                     }
@@ -152,7 +162,6 @@ internal class DemoViewModel(
                 _state.update {
                     it.copy(
                         countries = sampleCountries,
-                        statusMessage = "DB load deferred. Showing ${sampleCountries.size} sample countries.",
                         isLoadingCountries = false,
                     )
                 }

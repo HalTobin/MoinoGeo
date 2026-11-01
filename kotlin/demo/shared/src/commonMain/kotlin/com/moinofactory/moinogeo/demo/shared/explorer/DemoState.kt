@@ -11,7 +11,6 @@ import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
 internal data class DemoState(
     val countries: List<Country> = emptyList(),
     val isLoadingCountries: Boolean = true,
-    val statusMessage: String? = null,
 
     val selectedLibrary: FlagLibraryType = FlagLibraryType.LIPIS_RECTANGLE,
     val selectedViewMode: FlagViewMode = FlagViewMode.LIST,
