@@ -54,4 +54,19 @@ class MapProjectionTest {
         assertEquals(0.8, center.latitude, absoluteTolerance = 1e-6)
         assertEquals(0.8, center.longitude, absoluteTolerance = 1e-6)
     }
+
+    @Test
+    fun horizontalTileShiftsByWorldWidth() {
+        val point = GeoPoint(latitude = 10.0, longitude = 20.0)
+        val primary = projection.toOffsetOnTile(point, tileX = 0)
+        val east = projection.toOffsetOnTile(point, tileX = 1)
+        assertEquals(primary.x + projection.worldWidth, east.x, absoluteTolerance = 0.01f)
+        assertEquals(primary.y, east.y, absoluteTolerance = 0.01f)
+    }
+
+    @Test
+    fun wrapOffsetCenteredKeepsHorizontalPanBounded() {
+        assertEquals(10f, wrapOffsetCentered(10f, period = 360f), absoluteTolerance = 0.01f)
+        assertEquals(-10f, wrapOffsetCentered(350f, period = 360f), absoluteTolerance = 0.01f)
+    }
 }

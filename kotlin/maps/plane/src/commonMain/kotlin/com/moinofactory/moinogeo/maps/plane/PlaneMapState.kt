@@ -13,7 +13,7 @@ class PlaneMapState(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     val minZoom: Float = 0.5f,
-    val maxZoom: Float = 8.0f,
+    val maxZoom: Float = 12.0f,
 ) {
     var zoom by mutableFloatStateOf(initialZoom.coerceIn(minZoom, maxZoom))
     var offsetX by mutableFloatStateOf(initialOffsetX)
@@ -28,10 +28,46 @@ class PlaneMapState(
         zoom = (zoom / factor).coerceIn(minZoom, maxZoom)
     }
 
+    /**
+     * Zoom by [factor] keeping the geographic point under ([focalX], [focalY])
+     * (viewport pixels) fixed on screen.
+     */
+    fun zoomAt(focalX: Float, focalY: Float, factor: Float) {
+        val width = viewportSize.width
+        val height = viewportSize.height
+        if (width <= 0f || height <= 0f || factor == 1f) return
+
+        val oldZoom = zoom
+        val newZoom = (oldZoom * factor).coerceIn(minZoom, maxZoom)
+        if (newZoom == oldZoom) return
+
+        val cx = width / 2f
+        val cy = height / 2f
+        offsetX += (focalX - cx) * (1f / newZoom - 1f / oldZoom)
+        offsetY += (focalY - cy) * (1f / newZoom - 1f / oldZoom)
+        zoom = newZoom
+        normalizeHorizontalOffset()
+    }
+
+    /** Pan in screen pixels (converted to map space). */
+    fun panBy(deltaX: Float, deltaY: Float) {
+        if (zoom == 0f) return
+        offsetX += deltaX / zoom
+        offsetY += deltaY / zoom
+        normalizeHorizontalOffset()
+    }
+
     fun reset() {
         zoom = 1.0f
         offsetX = 0f
         offsetY = 0f
+    }
+
+    internal fun normalizeHorizontalOffset() {
+        val period = viewportSize.width
+        if (period > 0f) {
+            offsetX = wrapOffsetCentered(offsetX, period)
+        }
     }
 }
 
@@ -41,7 +77,7 @@ fun rememberPlaneMapState(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     minZoom: Float = 0.5f,
-    maxZoom: Float = 8.0f,
+    maxZoom: Float = 12.0f,
 ): PlaneMapState {
     return remember {
         PlaneMapState(

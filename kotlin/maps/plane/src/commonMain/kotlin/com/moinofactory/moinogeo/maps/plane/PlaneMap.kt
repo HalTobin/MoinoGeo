@@ -1,7 +1,6 @@
 package com.moinofactory.moinogeo.maps.plane
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -9,7 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.toSize
 import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
@@ -23,6 +21,9 @@ import com.moinofactory.moinogeo.maps.topography.DefaultTopographyProvider
 /**
  * 2D equirectangular map. Base layers come from [mapStyle] + providers;
  * overlays are declared in [content] via [MapScope] (`Marker`, `Circle`, `Area`).
+ *
+ * Supports pan, pinch-zoom, mouse-wheel zoom, and double-tap zoom. The world
+ * loops horizontally when panning east/west.
  *
  * ```kotlin
  * PlaneMap(mapStyle = MapDefaults.style()) {
@@ -40,9 +41,7 @@ import com.moinofactory.moinogeo.maps.topography.DefaultTopographyProvider
  *         fillColor = Color(0x66FF5722),
  *         borderColor = Color(0xFFFF5722),
  *         borderWidth = 3f,
- *     ) {
- *         Text("FR")
- *     }
+ *     )
  * }
  * ```
  */
@@ -62,13 +61,7 @@ fun PlaneMap(
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { state.viewportSize = it.toSize() }
-            .pointerInput(state) {
-                detectTransformGestures { _, pan, zoomFactor, _ ->
-                    state.zoom = (state.zoom * zoomFactor).coerceIn(state.minZoom, state.maxZoom)
-                    state.offsetX += pan.x
-                    state.offsetY += pan.y
-                }
-            },
+            .mapGestures(state),
     ) {
         val projection = remember(
             state.viewportSize,
@@ -94,34 +87,38 @@ fun PlaneMap(
 
             drawRect(color = mapStyle.backgroundColor)
 
-            if (mapStyle.showTopography) {
-                for (feature in topoData.features) {
-                    val zoneStyle = mapStyle.zoneStyles[feature.zone]
-                        ?: mapStyle.zoneStyles[TopoZone.NEUTRAL]
-                        ?: continue
-                    val path = feature.geometry.toPath(proj) ?: continue
-                    drawPath(path = path, color = zoneStyle.fillColor)
-                    val stroke = zoneStyle.strokeColor
-                    if (stroke != null && zoneStyle.strokeWidth > 0f) {
-                        drawPath(
-                            path = path,
-                            color = stroke,
-                            style = Stroke(width = zoneStyle.strokeWidth),
-                        )
+            for (tx in MapProjection.HorizontalWrapTiles) {
+                val tiled = proj.copy(offsetX = proj.offsetX + tx * proj.worldWidth)
+
+                if (mapStyle.showTopography) {
+                    for (feature in topoData.features) {
+                        val zoneStyle = mapStyle.zoneStyles[feature.zone]
+                            ?: mapStyle.zoneStyles[TopoZone.NEUTRAL]
+                            ?: continue
+                        val path = feature.geometry.toPath(tiled) ?: continue
+                        drawPath(path = path, color = zoneStyle.fillColor)
+                        val stroke = zoneStyle.strokeColor
+                        if (stroke != null && zoneStyle.strokeWidth > 0f) {
+                            drawPath(
+                                path = path,
+                                color = stroke,
+                                style = Stroke(width = zoneStyle.strokeWidth),
+                            )
+                        }
                     }
                 }
-            }
 
-            if (mapStyle.showBorders) {
-                val strokeWidth = mapStyle.borderStyle.lineWidth * state.zoom
-                for (feature in boundaryData.features) {
-                    for (polygon in feature.geometries) {
-                        val path = polygon.toBorderPath(proj) ?: continue
-                        drawPath(
-                            path = path,
-                            color = mapStyle.borderStyle.lineColor,
-                            style = Stroke(width = strokeWidth),
-                        )
+                if (mapStyle.showBorders) {
+                    val strokeWidth = mapStyle.borderStyle.lineWidth * state.zoom
+                    for (feature in boundaryData.features) {
+                        for (polygon in feature.geometries) {
+                            val path = polygon.toBorderPath(tiled) ?: continue
+                            drawPath(
+                                path = path,
+                                color = mapStyle.borderStyle.lineColor,
+                                style = Stroke(width = strokeWidth),
+                            )
+                        }
                     }
                 }
             }
@@ -139,10 +136,10 @@ fun PlaneMap(
 private fun GeoPolygon.toBorderPath(projection: MapProjection): Path? {
     if (outerBounds.size < 2) return null
     val path = Path()
-    val start = projection.toOffset(outerBounds.first())
+    val start = projection.toOffsetOnTile(outerBounds.first(), tileX = 0)
     path.moveTo(start.x, start.y)
     for (i in 1 until outerBounds.size) {
-        val p = projection.toOffset(outerBounds[i])
+        val p = projection.toOffsetOnTile(outerBounds[i], tileX = 0)
         path.lineTo(p.x, p.y)
     }
     path.close()
