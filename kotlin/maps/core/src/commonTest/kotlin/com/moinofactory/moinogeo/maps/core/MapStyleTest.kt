@@ -10,7 +10,7 @@ class MapStyleTest {
     fun testDefaultMapStyle() {
         val style = MapStyle.Default
         assertNotNull(style.backgroundColor)
-        assertEquals(6, style.zoneStyles.size)
+        assertEquals(8, style.zoneStyles.size)
         assertEquals(true, style.showBorders)
         assertEquals(true, style.showTopography)
     }
@@ -18,18 +18,22 @@ class MapStyleTest {
     @Test
     fun testTopoZoneEnumValues() {
         val zones = TopoZone.entries
-        assertEquals(6, zones.size)
+        assertEquals(8, zones.size)
     }
 
     @Test
     fun testMapDefaultsStyle() {
         val customStyle = MapDefaults.style(
             forestColor = Color.Green,
+            grasslandColor = Color(0xFF4CAF50),
+            agricultureColor = Color(0xFF8BC34A),
             sandColor = Color.Yellow,
             borderColor = Color.Red,
             borderWidth = 3.0f
         )
         assertEquals(Color.Green, customStyle.zoneStyles[TopoZone.FOREST]?.fillColor)
+        assertEquals(Color(0xFF4CAF50), customStyle.zoneStyles[TopoZone.GRASSLAND]?.fillColor)
+        assertEquals(Color(0xFF8BC34A), customStyle.zoneStyles[TopoZone.AGRICULTURE]?.fillColor)
         assertEquals(Color.Yellow, customStyle.zoneStyles[TopoZone.SAND]?.fillColor)
         assertEquals(Color.Red, customStyle.borderStyle.lineColor)
         assertEquals(3.0f, customStyle.borderStyle.lineWidth)

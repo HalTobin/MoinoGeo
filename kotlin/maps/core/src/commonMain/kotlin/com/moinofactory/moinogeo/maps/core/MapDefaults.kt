@@ -9,13 +9,15 @@ import androidx.compose.ui.graphics.Color
 object MapDefaults {
 
     /**
-     * Creates a [MapStyle] with customizable colors for topography zones (WATER, FOREST, ROCK, SNOW, SAND, NEUTRAL),
+     * Creates a [MapStyle] with customizable colors for topography zones (WATER, FOREST, GRASSLAND, AGRICULTURE, ROCK, SNOW, SAND, NEUTRAL),
      * border color, border width, and background.
      *
      * Usage matching Compose component conventions (similar to `ButtonDefaults.colors()`):
      * ```kotlin
      * val customStyle = MapDefaults.style(
      *     forestColor = Color.Green,
+     *     grasslandColor = Color(0xFF4CAF50),
+     *     agricultureColor = Color(0xFF8BC34A),
      *     sandColor = Color.Yellow,
      *     borderColor = Color.Black,
      *     borderWidth = 2.0f
@@ -24,7 +26,9 @@ object MapDefaults {
      *
      * @param backgroundColor Color for the map background/canvas.
      * @param waterColor Color for [TopoZone.WATER] regions.
-     * @param forestColor Color for [TopoZone.FOREST] regions.
+     * @param forestColor Color for [TopoZone.FOREST] regions (e.g., dense woods/forests).
+     * @param grasslandColor Color for [TopoZone.GRASSLAND] regions (e.g., plains/meadows/grasslands).
+     * @param agricultureColor Color for [TopoZone.AGRICULTURE] regions (e.g., farmlands/cropland).
      * @param rockColor Color for [TopoZone.ROCK] regions.
      * @param snowColor Color for [TopoZone.SNOW] regions.
      * @param sandColor Color for [TopoZone.SAND] regions.
@@ -39,6 +43,8 @@ object MapDefaults {
         backgroundColor: Color = Color(0xFFEBF4FA),
         waterColor: Color = Color(0xFF4A90E2),
         forestColor: Color = Color(0xFF2E7D32),
+        grasslandColor: Color = Color(0xFF4CAF50),
+        agricultureColor: Color = Color(0xFF8BC34A),
         rockColor: Color = Color(0xFF795548),
         snowColor: Color = Color(0xFFE0E0E0),
         sandColor: Color = Color(0xFFE9C46A),
@@ -53,6 +59,8 @@ object MapDefaults {
             zoneStyles = mapOf(
                 TopoZone.WATER to ZoneStyle(fillColor = waterColor),
                 TopoZone.FOREST to ZoneStyle(fillColor = forestColor),
+                TopoZone.GRASSLAND to ZoneStyle(fillColor = grasslandColor),
+                TopoZone.AGRICULTURE to ZoneStyle(fillColor = agricultureColor),
                 TopoZone.ROCK to ZoneStyle(fillColor = rockColor),
                 TopoZone.SNOW to ZoneStyle(fillColor = snowColor),
                 TopoZone.SAND to ZoneStyle(fillColor = sandColor),
