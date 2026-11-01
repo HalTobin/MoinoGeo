@@ -64,6 +64,21 @@ project(":flags:hatscripts-flags-circle").projectDir = file("kotlin/flags/hatscr
 include(":maps")
 project(":maps").projectDir = file("kotlin/maps")
 
+include(":maps:core")
+project(":maps:core").projectDir = file("kotlin/maps/core")
+
+include(":maps:borders")
+project(":maps:borders").projectDir = file("kotlin/maps/borders")
+
+include(":maps:topography")
+project(":maps:topography").projectDir = file("kotlin/maps/topography")
+
+include(":maps:plane")
+project(":maps:plane").projectDir = file("kotlin/maps/plane")
+
+include(":maps:sphere")
+project(":maps:sphere").projectDir = file("kotlin/maps/sphere")
+
 include(":shared")
 project(":shared").projectDir = file("kotlin/demo/shared")
 

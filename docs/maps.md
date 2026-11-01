@@ -1,12 +1,19 @@
-# TopoJSON Map Boundaries Extension Guide
+# Map & Topography Extension Guide
 
-As part of MoinoGeo's mobile platform wrapper, TopoJSON vector polygon boundary data (`world-50m.topojson`) is provided as an **optional visual extension module** for rendering accurate, offline country shapes and borders on mobile map overlays (MapKit, Mapbox, Google Maps).
+The MoinoGeo map ecosystem is modularly split into five dedicated Kotlin Multiplatform submodules under `:maps`:
 
-The map boundaries module is **completely unbundlable and abstractable**. Developers can omit the map boundary dataset (~2.1 MB) if maps are not needed, or replace the default dataset with **custom boundary assets**.
+```
+kotlin/maps/
+├── core/         # Map styling (MapStyle, ZoneStyle, BorderStyle), topography & border data models (TopoZone, GeoPolygon, GeoPoint, TopoFeature, BoundaryFeature), and provider interfaces (BoundaryProvider, TopographyProvider)
+├── borders/      # Default and custom border implementations (TopoJsonDecoder, DefaultBoundaryProvider, CustomBoundaryProvider)
+├── topography/   # Default and custom topography implementations (DefaultTopographyProvider with WATER, FOREST, ROCK, SNOW, NEUTRAL zones, TopographyUtils)
+├── plane/        # 2D plane map visualization composable (PlaneMap, PlaneMapState with pan/zoom gestures)
+└── sphere/       # 3D sphere map placeholder and styling configuration (SphereMap, SphereMapStyle with globe radius, tilt, camera distance, and atmosphere settings)
+```
 
 ---
 
-## 1. Modular Boundary Architecture & Custom Boundary Injection
+## 1. Modular Architecture & Data Injection
 
 Geopolitical borders, territorial claims, and map detail levels vary across application domain requirements and political jurisdictions. MoinoGeo decouples boundary geometry decoding and map rendering from the default `world-50m.topojson` asset.
 
