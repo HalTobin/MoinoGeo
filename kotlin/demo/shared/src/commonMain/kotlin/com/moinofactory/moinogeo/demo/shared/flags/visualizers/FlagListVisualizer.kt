@@ -28,7 +28,7 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  * List layout showing each flag with country attributes.
  */
 @Composable
-fun FlagListVisualizer(
+internal fun FlagListVisualizer(
     countries: List<Country>,
     provider: FlagAssetProvider,
     onCountryClick: (Country) -> Unit,

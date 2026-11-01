@@ -19,7 +19,7 @@ import com.moinofactory.moinogeo.demo.shared.flags.visualizers.FlagGridVisualize
 import com.moinofactory.moinogeo.demo.shared.flags.visualizers.FlagListVisualizer
 
 @Composable
-fun CountryListPane(
+internal fun CountryListPane(
     countries: List<Country>,
     isLoading: Boolean,
     selectedLibrary: FlagLibraryType,

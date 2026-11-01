@@ -10,7 +10,7 @@ import com.moinofactory.moinogeo.flags.withFallback
 /**
  * Flag libraries available in `@kotlin/flags`.
  */
-enum class FlagLibraryType(
+internal enum class FlagLibraryType(
     val title: String,
     val shortName: String,
     val description: String,

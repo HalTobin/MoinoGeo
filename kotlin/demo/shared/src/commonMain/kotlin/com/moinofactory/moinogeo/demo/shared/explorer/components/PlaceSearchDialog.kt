@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 
 @Composable
-fun PlaceSearchDialog(
+internal fun PlaceSearchDialog(
     query: String,
     results: List<GeoPlace>,
     isSearching: Boolean,

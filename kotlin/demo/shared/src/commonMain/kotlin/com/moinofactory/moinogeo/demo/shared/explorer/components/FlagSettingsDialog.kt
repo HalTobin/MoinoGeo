@@ -21,7 +21,7 @@ import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
 
 @Composable
-fun FlagSettingsDialog(
+internal fun FlagSettingsDialog(
     selectedLibrary: FlagLibraryType,
     selectedViewMode: FlagViewMode,
     onLibrarySelected: (FlagLibraryType) -> Unit,

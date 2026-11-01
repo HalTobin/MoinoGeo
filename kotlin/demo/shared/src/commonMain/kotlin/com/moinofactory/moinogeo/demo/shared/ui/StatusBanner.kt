@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun StatusBanner(
+internal fun StatusBanner(
     message: String,
     modifier: Modifier = Modifier,
 ) {

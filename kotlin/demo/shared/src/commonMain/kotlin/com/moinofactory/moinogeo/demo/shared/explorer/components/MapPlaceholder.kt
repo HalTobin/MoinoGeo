@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 
 @Composable
-fun MapPlaceholder(
+internal fun MapPlaceholder(
     selectedPlace: GeoPlace?,
     modifier: Modifier = Modifier,
 ) {

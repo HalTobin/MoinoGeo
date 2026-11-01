@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
  *
  * Exposes a single [state] [StateFlow] and a single [onAction] entry point.
  */
-class DemoViewModel(
+internal class DemoViewModel(
     private val geo: MoinoGeoService,
 ) : ViewModel() {
 

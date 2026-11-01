@@ -8,7 +8,7 @@ import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
 /**
  * Immutable UI state for [DemoScreen].
  */
-data class DemoState(
+internal data class DemoState(
     val countries: List<Country> = emptyList(),
     val isLoadingCountries: Boolean = true,
     val statusMessage: String? = null,

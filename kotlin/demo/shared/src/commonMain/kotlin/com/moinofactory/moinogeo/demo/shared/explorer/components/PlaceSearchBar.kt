@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
  * Non-editable search affordance that opens the place-search dialog.
  */
 @Composable
-fun PlaceSearchBar(
+internal fun PlaceSearchBar(
     query: String,
     onOpenSearch: () -> Unit,
     modifier: Modifier = Modifier,

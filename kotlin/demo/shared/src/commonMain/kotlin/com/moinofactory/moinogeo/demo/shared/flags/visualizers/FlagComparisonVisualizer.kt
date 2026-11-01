@@ -33,7 +33,7 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  * Side-by-side comparison of all flag libraries per country.
  */
 @Composable
-fun FlagComparisonVisualizer(
+internal fun FlagComparisonVisualizer(
     countries: List<Country>,
     onCountryClick: (Country) -> Unit,
     modifier: Modifier = Modifier,

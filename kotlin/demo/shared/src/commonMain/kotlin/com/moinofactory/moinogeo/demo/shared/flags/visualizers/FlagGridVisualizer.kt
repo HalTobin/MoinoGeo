@@ -33,7 +33,7 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  * Grid layout for browsing flags efficiently.
  */
 @Composable
-fun FlagGridVisualizer(
+internal fun FlagGridVisualizer(
     countries: List<Country>,
     provider: FlagAssetProvider,
     onCountryClick: (Country) -> Unit,

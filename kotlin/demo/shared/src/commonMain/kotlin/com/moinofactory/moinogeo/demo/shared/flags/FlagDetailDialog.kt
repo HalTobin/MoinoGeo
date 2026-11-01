@@ -26,7 +26,7 @@ import com.moinofactory.moinogeo.flags.FlagIcon
  * Inspection dialog for a single country and its flags across all libraries.
  */
 @Composable
-fun FlagDetailDialog(
+internal fun FlagDetailDialog(
     country: Country,
     onDismiss: () -> Unit,
 ) {

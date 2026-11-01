@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -32,6 +34,8 @@ import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchBar
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchDialog
 import com.moinofactory.moinogeo.demo.shared.flags.FlagDetailDialog
 import com.moinofactory.moinogeo.demo.shared.ui.StatusBanner
+import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
+import com.moinofactory.moinogeo.demo.shared.ui.icon.settings
 
 private val ExpandedWidthBreakpoint = 840.dp
 
@@ -40,7 +44,7 @@ private val ExpandedWidthBreakpoint = 840.dp
  * search + map on compact screens.
  */
 @Composable
-fun DemoScreen(geo: MoinoGeoService) {
+internal fun DemoScreen(geo: MoinoGeoService) {
     val demoViewModel: DemoViewModel = viewModel { DemoViewModel(geo) }
     val state by demoViewModel.state.collectAsStateWithLifecycle()
     DemoScreenContent(
@@ -73,8 +77,13 @@ internal fun DemoScreenContent(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { onAction(DemoAction.OpenSettings) }) {
-                        Text("Settings")
+                    IconButton(
+                        onClick = { onAction(DemoAction.OpenSettings) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.settings,
+                            contentDescription = null
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

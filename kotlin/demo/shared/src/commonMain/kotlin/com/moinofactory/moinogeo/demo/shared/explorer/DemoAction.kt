@@ -8,7 +8,7 @@ import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
 /**
  * User intents for [DemoScreen]. Handled exclusively via [DemoViewModel.onAction].
  */
-sealed class DemoAction {
+internal sealed class DemoAction {
     data object OpenSearch : DemoAction()
     data object CloseSearch : DemoAction()
     data class SearchQueryChanged(val query: String) : DemoAction()

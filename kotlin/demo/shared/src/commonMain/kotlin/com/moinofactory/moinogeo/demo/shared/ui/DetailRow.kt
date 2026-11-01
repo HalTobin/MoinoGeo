@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
-fun DetailRow(
+internal fun DetailRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,

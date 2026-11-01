@@ -5,7 +5,7 @@ import com.moinofactory.moinogeo.core.domain.model.Country
 /**
  * Sample fallback dataset when the database is empty or unavailable.
  */
-val sampleCountries: List<Country> = listOf(
+internal val sampleCountries: List<Country> = listOf(
     Country(1, "United States", "US", "USA", "Washington D.C.", 2, 6, 38.0, -97.0),
     Country(2, "France", "FR", "FRA", "Paris", 4, 17, 46.0, 2.0),
     Country(3, "Germany", "DE", "DEU", "Berlin", 4, 17, 51.0, 9.0),
