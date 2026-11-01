@@ -1,4 +1,4 @@
-package com.moinofactory.moinogeo.maps.borders
+package com.moinofactory.moinogeo.maps.countries
 
 import com.moinofactory.moinogeo.maps.core.BoundaryData
 import com.moinofactory.moinogeo.maps.core.BoundaryFeature

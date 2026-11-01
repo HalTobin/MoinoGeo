@@ -10,7 +10,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.moinofactory.moinogeo.maps.borders"
+        namespace = "com.moinofactory.moinogeo.maps.countries"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true

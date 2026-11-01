@@ -1,4 +1,4 @@
-package com.moinofactory.moinogeo.maps.borders
+package com.moinofactory.moinogeo.maps.countries
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -22,7 +22,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.maps.core)
-            implementation(projects.maps.borders)
+            implementation(projects.maps.countries)
             implementation(projects.maps.topography)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)

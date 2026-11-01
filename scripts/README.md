@@ -40,25 +40,42 @@ python3 scripts/flags/export_kotlin.py --only yummygum-flagpack lipis-square
 
 ---
 
-## 3. TopoJSON Map Boundary Converter (`convert_topojson.py`)
+## 3. Regions SQLite export (`scripts/regions/`)
 
-Converts GeoJSON boundaries from Natural Earth or simplifies existing TopoJSON files into quantized, delta-encoded TopoJSON assets (`world-50m.topojson`).
+Builds a slim search-focused `moinogeo.db` from nested JSON under `data/db/regions/`.
+See [`scripts/regions/README.md`](regions/README.md).
 
-### Features
-- Quantizes arc coordinates to 10,000-point resolution.
-- Filters out unneeded property attributes to minimize file payload.
-- Includes pure Python fallback if the `topojson` package is not installed.
-
-### Usage
 ```bash
-python3 scripts/convert_topojson.py --input path/to/ne_50m_admin_0_countries.geojson --output data/world-50m.topojson
+python3 scripts/regions/export_kotlin.py
+python3 scripts/regions/export_kotlin.py --dry-run
+```
+
+---
+
+## 4. Topography & country boundaries (`scripts/topo/`)
+
+Downloads [Natural Earth](https://www.naturalearthdata.com/) physical + admin-0 vectors
+(cached under `data/natural_earth/`), simplifies for offline mobile maps, and writes:
+
+- `TopographyData` JSON → `kotlin/maps/topography/.../resources/`
+- `BoundaryData` JSON + TopoJSON → `kotlin/maps/countries/.../resources/`
+
+NE vectors cover `WATER` / `SNOW` / `SAND` / `NEUTRAL` only — not forest, grassland,
+agriculture, or rock. See [`scripts/topo/README.md`](topo/README.md).
+
+```bash
+pip install -r scripts/requirements.txt
+python3 scripts/topo/export_kotlin.py
+python3 scripts/topo/export_kotlin.py --dry-run
+python3 scripts/topo/export_kotlin.py --scale 110m --staging-only
 ```
 
 ---
 
 ## Setup & Dependencies
 
-All scripts are compatible with Python 3.8+ and use standard library modules by default. Optional packages can be installed via:
+Flag/region scripts lean on the standard library. Topo export needs GeoPandas +
+Shapely + topojson:
 
 ```bash
 pip install -r scripts/requirements.txt

@@ -1,4 +1,4 @@
-package com.moinofactory.moinogeo.maps.borders
+package com.moinofactory.moinogeo.maps.countries
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject

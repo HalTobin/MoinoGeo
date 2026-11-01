@@ -28,5 +28,8 @@ utilitaries/ls_cli/configurations/
 **/.venv/
 **/__pycache__/
 .env
+# Natural Earth download cache (re-fetch via scripts/topo)
+data/natural_earth/
+
 **/release/
 **/schemas/

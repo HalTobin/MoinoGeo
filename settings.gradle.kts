@@ -67,8 +67,8 @@ project(":maps").projectDir = file("kotlin/maps")
 include(":maps:core")
 project(":maps:core").projectDir = file("kotlin/maps/core")
 
-include(":maps:borders")
-project(":maps:borders").projectDir = file("kotlin/maps/borders")
+include(":maps:countries")
+project(":maps:countries").projectDir = file("kotlin/maps/countries")
 
 include(":maps:topography")
 project(":maps:topography").projectDir = file("kotlin/maps/topography")

@@ -1,4 +1,7 @@
-# MoinoGeo Script Dependencies (Optional for higher performance topojson conversion)
-# Standard library is used by default for build_database.py and optimize_flags.py.
+# MoinoGeo Script Dependencies
 
+# TopoJSON conversion (borders) + Natural Earth export (scripts/topo)
 topojson>=1.5.0
+geopandas>=0.14.0
+shapely>=2.0.0
+pyogrio>=0.7.0

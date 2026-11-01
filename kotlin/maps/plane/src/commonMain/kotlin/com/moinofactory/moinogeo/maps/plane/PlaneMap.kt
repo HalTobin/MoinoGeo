@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.moinofactory.moinogeo.maps.borders.DefaultBoundaryProvider
+import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
 import com.moinofactory.moinogeo.maps.core.BoundaryProvider
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.MapStyle
