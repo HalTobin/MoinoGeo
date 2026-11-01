@@ -7,7 +7,7 @@ kotlin/maps/
 ├── core/         # Map styling (MapStyle, MapDefaults, MapDefault, ZoneStyle, BorderStyle), topography & border data models (TopoZone, GeoPolygon, GeoPoint, TopoFeature, BoundaryFeature), and provider interfaces (BoundaryProvider, TopographyProvider)
 ├── countries/    # Country list + boundary geometries (TopoJsonDecoder, DefaultBoundaryProvider, CustomBoundaryProvider)
 ├── topography/   # Default and custom topography implementations (DefaultTopographyProvider with WATER, FOREST, ROCK, SNOW, NEUTRAL zones, TopographyUtils)
-├── plane/        # 2D plane map visualization composable (PlaneMap, PlaneMapState with pan/zoom gestures)
+├── plane/        # 2D equirectangular map (PlaneMap + MapScope DSL: Marker, Circle, Area; PlaneMapState pan/zoom)
 └── sphere/       # 3D sphere map placeholder and styling configuration (SphereMap, SphereMapStyle with globe radius, tilt, camera distance, and atmosphere settings)
 ```
 

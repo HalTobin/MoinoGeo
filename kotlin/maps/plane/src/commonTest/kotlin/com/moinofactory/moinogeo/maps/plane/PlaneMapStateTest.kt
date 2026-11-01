@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 class PlaneMapStateTest {
     @Test
     fun testZoomInAndOut() {
-        val state = PlaneMapState(initialZoom = 1.0f)
+        val state = PlaneMapState(initialZoom = 1.0f, maxZoom = 5.0f)
         state.zoomIn()
         assertEquals(1.25f, state.zoom)
         state.zoomOut()

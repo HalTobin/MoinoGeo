@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -24,6 +25,7 @@ kotlin {
             implementation(projects.maps.core)
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)
+            implementation(libs.kotlinx.serialization.json)
         }
 
         commonTest.dependencies {

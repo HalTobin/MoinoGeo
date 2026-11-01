@@ -6,14 +6,39 @@ import com.moinofactory.moinogeo.maps.core.BoundaryProvider
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.GeoPolygon
 
+/**
+ * Loads country boundaries from, in order:
+ * 1. Optional constructor [boundaryData] / [customTopoJson]
+ * 2. Bundled `countries/boundary_data.json` (Natural Earth export)
+ * 3. Bundled `countries/world-50m.topojson`
+ * 4. Tiny in-code fallback polygons
+ */
 class DefaultBoundaryProvider(
-    private val customTopoJson: String? = null
+    private val boundaryData: BoundaryData? = null,
+    private val customTopoJson: String? = null,
 ) : BoundaryProvider {
 
     override fun getBoundaryData(): BoundaryData {
+        boundaryData?.let { return it }
+
         if (!customTopoJson.isNullOrBlank()) {
             return TopoJsonDecoder.decodeTopoJson(customTopoJson)
         }
+
+        readClasspathResource(RESOURCE_BOUNDARY_JSON)
+            ?.let { bytes ->
+                val decoded = BoundaryDataJson.decodeBytes(bytes)
+                if (decoded.features.isNotEmpty()) return decoded
+            }
+
+        readClasspathResource(RESOURCE_TOPOJSON)
+            ?.decodeToString()
+            ?.takeIf { it.isNotBlank() }
+            ?.let { topo ->
+                val decoded = TopoJsonDecoder.decodeTopoJson(topo)
+                if (decoded.features.isNotEmpty()) return decoded
+            }
+
         return createFallbackWorldBorders()
     }
 
@@ -31,10 +56,10 @@ class DefaultBoundaryProvider(
                                 GeoPoint(49.0, -67.0),
                                 GeoPoint(25.0, -80.0),
                                 GeoPoint(31.0, -111.0),
-                                GeoPoint(49.0, -125.0)
-                            )
-                        )
-                    )
+                                GeoPoint(49.0, -125.0),
+                            ),
+                        ),
+                    ),
                 ),
                 BoundaryFeature(
                     id = "FR",
@@ -49,10 +74,10 @@ class DefaultBoundaryProvider(
                                 GeoPoint(42.5, 3.1),
                                 GeoPoint(43.5, -1.8),
                                 GeoPoint(48.4, -4.8),
-                                GeoPoint(51.0, 2.5)
-                            )
-                        )
-                    )
+                                GeoPoint(51.0, 2.5),
+                            ),
+                        ),
+                    ),
                 ),
                 BoundaryFeature(
                     id = "JP",
@@ -67,10 +92,10 @@ class DefaultBoundaryProvider(
                                 GeoPoint(31.0, 130.5),
                                 GeoPoint(34.0, 131.0),
                                 GeoPoint(41.5, 140.0),
-                                GeoPoint(45.5, 141.9)
-                            )
-                        )
-                    )
+                                GeoPoint(45.5, 141.9),
+                            ),
+                        ),
+                    ),
                 ),
                 BoundaryFeature(
                     id = "BR",
@@ -84,12 +109,17 @@ class DefaultBoundaryProvider(
                                 GeoPoint(-33.0, -53.0),
                                 GeoPoint(-20.0, -58.0),
                                 GeoPoint(-10.0, -70.0),
-                                GeoPoint(5.0, -60.0)
-                            )
-                        )
-                    )
-                )
-            )
+                                GeoPoint(5.0, -60.0),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
         )
+    }
+
+    companion object {
+        const val RESOURCE_BOUNDARY_JSON = "countries/boundary_data.json"
+        const val RESOURCE_TOPOJSON = "countries/world-50m.topojson"
     }
 }
