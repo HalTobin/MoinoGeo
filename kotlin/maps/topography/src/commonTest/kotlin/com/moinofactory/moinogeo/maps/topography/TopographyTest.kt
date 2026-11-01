@@ -15,6 +15,6 @@ class TopographyTest {
         assertTrue(data.features.any { it.zone == TopoZone.FOREST })
         assertTrue(data.features.any { it.zone == TopoZone.ROCK })
         assertTrue(data.features.any { it.zone == TopoZone.SNOW })
-        assertTrue(data.features.any { it.zone == TopoZone.NEUTRAL })
+        assertTrue(data.features.any { it.zone == TopoZone.SAND })
     }
 }

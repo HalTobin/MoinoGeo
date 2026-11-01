@@ -8,5 +8,6 @@ enum class TopoZone {
     FOREST,
     ROCK,
     SNOW,
+    SAND,
     NEUTRAL
 }

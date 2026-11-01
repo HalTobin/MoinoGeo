@@ -69,9 +69,9 @@ class DefaultTopographyProvider : TopographyProvider {
                     )
                 ),
                 TopoFeature(
-                    id = "neutral_sahara",
-                    name = "Sahara Plateau",
-                    zone = TopoZone.NEUTRAL,
+                    id = "sand_sahara",
+                    name = "Sahara Desert",
+                    zone = TopoZone.SAND,
                     geometry = GeoPolygon(
                         outerBounds = listOf(
                             GeoPoint(35.0, -15.0),
