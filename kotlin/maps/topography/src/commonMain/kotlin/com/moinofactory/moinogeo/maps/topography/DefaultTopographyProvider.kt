@@ -106,7 +106,7 @@ class DefaultTopographyProvider(
         )
     }
 
-    companion object {
+    private companion object {
         const val RESOURCE_TOPOGRAPHY_JSON = "topography/topography_data.json"
     }
 }

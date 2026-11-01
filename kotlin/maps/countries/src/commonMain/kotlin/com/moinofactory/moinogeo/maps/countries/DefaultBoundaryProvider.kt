@@ -118,7 +118,7 @@ class DefaultBoundaryProvider(
         )
     }
 
-    companion object {
+    private companion object {
         const val RESOURCE_BOUNDARY_JSON = "countries/boundary_data.json"
         const val RESOURCE_TOPOJSON = "countries/world-50m.topojson"
     }

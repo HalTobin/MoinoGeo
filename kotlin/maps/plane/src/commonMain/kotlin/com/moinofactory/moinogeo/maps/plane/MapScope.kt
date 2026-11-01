@@ -32,10 +32,6 @@ annotation class MapScopeMarker
  */
 @MapScopeMarker
 interface MapScope {
-    /** Current equirectangular projection (updates with pan/zoom/size). */
-    @Composable
-    fun projection(): MapProjection
-
     /**
      * Places [content] at [position]. [contentAlignment] anchors the content
      * relative to the projected point (e.g. [Alignment.BottomCenter] for a pin).
@@ -98,9 +94,6 @@ internal val LocalMapProjection = compositionLocalOf { MapProjection.Empty }
 
 @Immutable
 internal object MapScopeInstance : MapScope {
-    @Composable
-    override fun projection(): MapProjection = LocalMapProjection.current
-
     @Composable
     override fun Marker(
         position: GeoPoint,

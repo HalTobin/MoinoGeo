@@ -13,7 +13,7 @@ import kotlin.math.max
  * [PlaneMap] viewport (size + pan/zoom from [PlaneMapState]).
  */
 @Immutable
-data class MapProjection(
+internal data class MapProjection(
     val size: Size,
     val zoom: Float,
     val offsetX: Float,

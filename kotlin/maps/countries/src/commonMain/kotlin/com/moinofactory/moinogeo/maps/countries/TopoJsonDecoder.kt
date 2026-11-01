@@ -10,7 +10,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-object TopoJsonDecoder {
+internal object TopoJsonDecoder {
     private val jsonInstance = Json { ignoreUnknownKeys = true }
 
     fun decodeTopoJson(topoJsonString: String): BoundaryData {
@@ -23,7 +23,7 @@ object TopoJsonDecoder {
         }
     }
 
-    fun decodeTopoJsonModel(topoJson: TopoJson): BoundaryData {
+    private fun decodeTopoJsonModel(topoJson: TopoJson): BoundaryData {
         val transform = topoJson.transform
         val scaleX = transform?.scale?.getOrNull(0) ?: 1.0
         val scaleY = transform?.scale?.getOrNull(1) ?: 1.0

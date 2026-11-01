@@ -18,8 +18,7 @@ class PlaneMapState(
     var zoom by mutableFloatStateOf(initialZoom.coerceIn(minZoom, maxZoom))
     var offsetX by mutableFloatStateOf(initialOffsetX)
     var offsetY by mutableFloatStateOf(initialOffsetY)
-    var viewportSize by mutableStateOf(Size.Zero)
-        internal set
+    internal var viewportSize by mutableStateOf(Size.Zero)
 
     fun zoomIn(factor: Float = 1.25f) {
         zoom = (zoom * factor).coerceIn(minZoom, maxZoom)
@@ -34,14 +33,6 @@ class PlaneMapState(
         offsetX = 0f
         offsetY = 0f
     }
-
-    /** Current projection for the last measured viewport. */
-    fun projection(): MapProjection = MapProjection(
-        size = viewportSize,
-        zoom = zoom,
-        offsetX = offsetX,
-        offsetY = offsetY,
-    )
 }
 
 @Composable
