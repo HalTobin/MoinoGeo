@@ -3,7 +3,6 @@ package com.moinofactory.moinogeo.maps.plane
 import androidx.compose.ui.geometry.Size
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.GeoPolygon
-import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -81,63 +80,78 @@ class MapProjectionTest {
     }
 
     @Test
-    fun unwrapKeepsAntimeridianEdgesShort() {
-        val ring = listOf(
-            GeoPoint(latitude = -80.0, longitude = 170.0),
-            GeoPoint(latitude = -90.0, longitude = 180.0),
-            GeoPoint(latitude = -90.0, longitude = -180.0),
-            GeoPoint(latitude = -80.0, longitude = -170.0),
-            GeoPoint(latitude = -80.0, longitude = 170.0),
+    fun isArtificialBorderEdgeDetected() {
+        // Antimeridian cuts (e.g. Russia split at 180° or Antarctica cut down to South Pole)
+        assertTrue(
+            isArtificialBorderEdge(
+                GeoPoint(65.0, 180.0),
+                GeoPoint(70.0, 180.0),
+            ),
         )
-        val map = unwrapRingToMap(ring, worldWidth = 360f, worldHeight = 180f)
-        assertTrue(map.size >= 3)
-        for (i in 1 until map.size) {
-            assertTrue(
-                abs(map[i].x - map[i - 1].x) <= 180f + 0.01f,
-                "edge $i jumped by ${abs(map[i].x - map[i - 1].x)}",
-            )
-        }
-        // Duplicate close vertex dropped; first/last may sit ~360° apart in
-        // unwrapped space (polar continent) — that is handled at fill time.
-        assertFalse(sameApprox(map.first(), map.last()))
+        assertTrue(
+            isArtificialBorderEdge(
+                GeoPoint(65.0, -180.0),
+                GeoPoint(70.0, -180.0),
+            ),
+        )
+        // South pole and north pole edges
+        assertTrue(
+            isArtificialBorderEdge(
+                GeoPoint(-90.0, 180.0),
+                GeoPoint(-90.0, -180.0),
+            ),
+        )
+        assertTrue(
+            isArtificialBorderEdge(
+                GeoPoint(90.0, 0.0),
+                GeoPoint(90.0, 100.0),
+            ),
+        )
+        // Dateline wrap jumps
+        assertTrue(
+            isArtificialBorderEdge(
+                GeoPoint(10.0, 179.0),
+                GeoPoint(10.0, -179.0),
+            ),
+        )
+        // Normal geographic borders should NOT be flagged
+        assertFalse(
+            isArtificialBorderEdge(
+                GeoPoint(48.0, 2.0),
+                GeoPoint(49.0, 3.0),
+            ),
+        )
+        assertFalse(
+            isArtificialBorderEdge(
+                GeoPoint(65.0, 179.0),
+                GeoPoint(70.0, 178.0),
+            ),
+        )
     }
 
     @Test
-    fun antarcticaUnwrapStaysSouthernAndWide() {
-        val ring = listOf(
-            GeoPoint(-70.0, -60.0),
-            GeoPoint(-75.0, 0.0),
-            GeoPoint(-70.0, 120.0),
+    fun antarcticaRingIdentifiesArtificialEdges() {
+        val antarcticaRing = listOf(
+            GeoPoint(-84.71, 180.0),
             GeoPoint(-90.0, 180.0),
             GeoPoint(-90.0, -180.0),
-            GeoPoint(-80.0, -120.0),
-            GeoPoint(-70.0, -60.0),
-        )
-        val map = unwrapRingToMap(ring, worldWidth = 360f, worldHeight = 180f)
-        // All coast samples south of ~60S → map Y below equator (y=90).
-        assertTrue(map.all { it.y >= 90f - 1f })
-        // Unwrapped ring spans ~a full world so fill can close via south edge.
-        val span = map.maxOf { it.x } - map.minOf { it.x }
-        assertTrue(span > 180f, "expected wide polar ring, span=$span")
-    }
-
-    @Test
-    fun unwrapNormalizesIntoPrimaryWorld() {
-        // Ring starting on the antimeridian (like NE Antarctica) unwraps into
-        // [w, 2w] before normalize — must shift back so minX ∈ [0, w).
-        val ring = listOf(
-            GeoPoint(-84.0, 180.0),
-            GeoPoint(-90.0, 180.0),
-            GeoPoint(-90.0, -180.0),
-            GeoPoint(-84.0, -180.0),
+            GeoPoint(-84.71, -180.0),
             GeoPoint(-70.0, -90.0),
             GeoPoint(-70.0, 0.0),
             GeoPoint(-70.0, 90.0),
-            GeoPoint(-84.0, 180.0),
+            GeoPoint(-84.47, 178.28),
+            GeoPoint(-84.71, 180.0),
         )
-        val map = unwrapRingToMap(ring, worldWidth = 360f, worldHeight = 180f)
-        val minX = map.minOf { it.x }
-        assertTrue(minX >= -0.01f && minX < 360f, "minX=$minX")
+        // 0->1: antimeridian cut
+        assertTrue(isArtificialBorderEdge(antarcticaRing[0], antarcticaRing[1]))
+        // 1->2: South Pole cut
+        assertTrue(isArtificialBorderEdge(antarcticaRing[1], antarcticaRing[2]))
+        // 2->3: antimeridian cut
+        assertTrue(isArtificialBorderEdge(antarcticaRing[2], antarcticaRing[3]))
+        // 3->4: real coastline
+        assertFalse(isArtificialBorderEdge(antarcticaRing[3], antarcticaRing[4]))
+        // 7->8: real coastline ending at 180°
+        assertFalse(isArtificialBorderEdge(antarcticaRing[7], antarcticaRing[8]))
     }
 
     @Test
@@ -185,7 +199,4 @@ class MapProjectionTest {
         assertTrue(ocean.isWorldSpanning())
         assertFalse(lake.isWorldSpanning())
     }
-
-    private fun sameApprox(a: androidx.compose.ui.geometry.Offset, b: androidx.compose.ui.geometry.Offset): Boolean =
-        abs(a.x - b.x) < 1f && abs(a.y - b.y) < 1f
 }
