@@ -60,6 +60,8 @@ internal fun DemoMap(
         mapState.verticalScale = verticalScale
     }
     LaunchedEffect(centerLatitude, centerLongitude) {
+        // Camera pan via offsetX/offsetY — never shift the projection meridian
+        // (that breaks Natural Earth polygons pre-split at ±180°).
         mapState.setCenter(
             GeoPoint(
                 latitude = centerLatitude.toDouble(),

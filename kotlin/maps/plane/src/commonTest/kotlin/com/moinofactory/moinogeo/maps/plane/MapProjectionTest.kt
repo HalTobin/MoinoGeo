@@ -31,7 +31,7 @@ class MapProjectionTest {
         val base = projection.toOffsetOnTile(point, tileX = 0)
         val scaled = stretched.toOffsetOnTile(point, tileX = 0)
         assertEquals(base.x, scaled.x, absoluteTolerance = 0.01f)
-        // 45°N is above center; stretch pushes it farther from cy
+        // 45°N is above the equator pivot; stretch pushes it farther north on screen
         assertTrue(scaled.y < base.y)
         val back = stretched.toGeoPoint(scaled)
         assertEquals(point.latitude, back.latitude, absoluteTolerance = 1e-4)
@@ -39,9 +39,32 @@ class MapProjectionTest {
     }
 
     @Test
+    fun verticalScalePivotsAroundCenterLatitude() {
+        val pivoted = projection.copy(verticalScale = 2f, centerLatitude = 45.0)
+        val pivot = pivoted.toOffsetOnTile(GeoPoint(45.0, 0.0), tileX = 0)
+        val equator = pivoted.toOffsetOnTile(GeoPoint(0.0, 0.0), tileX = 0)
+        assertEquals(45f, pivot.y, absoluteTolerance = 0.01f)
+        assertEquals(135f, equator.y, absoluteTolerance = 0.01f)
+        val back = pivoted.toGeoPoint(equator)
+        assertEquals(0.0, back.latitude, absoluteTolerance = 1e-4)
+    }
+
+    @Test
     fun roundTripsGeoPoint() {
         val original = GeoPoint(latitude = 48.8566, longitude = 2.3522)
         val back = projection.toGeoPoint(projection.toOffset(original))
+        assertEquals(original.latitude, back.latitude, absoluteTolerance = 1e-4)
+        assertEquals(original.longitude, back.longitude, absoluteTolerance = 1e-4)
+    }
+
+    @Test
+    fun roundTripsWithVerticalPivotAndStretch() {
+        val proj = projection.copy(
+            verticalScale = 1.5f,
+            centerLatitude = -15.0,
+        )
+        val original = GeoPoint(latitude = -23.5, longitude = -46.6)
+        val back = proj.toGeoPoint(proj.toOffset(original))
         assertEquals(original.latitude, back.latitude, absoluteTolerance = 1e-4)
         assertEquals(original.longitude, back.longitude, absoluteTolerance = 1e-4)
     }

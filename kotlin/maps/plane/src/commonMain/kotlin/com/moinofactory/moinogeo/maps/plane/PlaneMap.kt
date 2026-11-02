@@ -55,6 +55,7 @@ fun PlaneMap(
             state.offsetX,
             state.offsetY,
             state.verticalScale,
+            state.centerLatitude,
         ) {
             MapProjection(
                 size = state.viewportSize,
@@ -62,6 +63,7 @@ fun PlaneMap(
                 offsetX = state.offsetX,
                 offsetY = state.offsetY,
                 verticalScale = state.verticalScale,
+                centerLatitude = state.centerLatitude,
             )
         }
 
@@ -72,6 +74,7 @@ fun PlaneMap(
                 offsetX = state.offsetX,
                 offsetY = state.offsetY,
                 verticalScale = state.verticalScale,
+                centerLatitude = state.centerLatitude,
             )
 
             // Ocean is the canvas base so missing/clipped water polygons never

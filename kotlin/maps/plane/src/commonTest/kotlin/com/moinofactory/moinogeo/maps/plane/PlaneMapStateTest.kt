@@ -23,6 +23,7 @@ class PlaneMapStateTest {
             initialOffsetX = 50f,
             initialOffsetY = 50f,
             initialVerticalScale = 1.5f,
+            initialCenterLatitude = 20.0,
         )
         state.viewportSize = Size(400f, 200f)
         state.reset()
@@ -30,6 +31,7 @@ class PlaneMapStateTest {
         assertEquals(0f, state.offsetX)
         assertEquals(0f, state.offsetY)
         assertEquals(1.0f, state.verticalScale)
+        assertEquals(0.0, state.centerLatitude)
     }
 
     @Test
@@ -60,12 +62,12 @@ class PlaneMapStateTest {
     }
 
     @Test
-    fun panByUsesVerticalScaleForY() {
+    fun panByUsesZoomForYEvenWithVerticalScale() {
         val state = PlaneMapState(initialZoom = 2f, initialVerticalScale = 2f)
         state.viewportSize = Size(400f, 200f)
         state.panBy(deltaX = 0f, deltaY = 40f)
-        // deltaY / (zoom * verticalScale) = 40 / 4 = 10
-        assertEquals(10f, state.offsetY, absoluteTolerance = 0.01f)
+        // offsetY is in the pivot/zoom frame: deltaY / zoom = 20
+        assertEquals(20f, state.offsetY, absoluteTolerance = 0.01f)
     }
 
     @Test
@@ -90,15 +92,22 @@ class PlaneMapStateTest {
     }
 
     @Test
-    fun setCenterMovesViewport() {
+    fun setCenterPansViaOffsetWithoutShiftingMeridian() {
         val state = PlaneMapState(initialZoom = 1f)
         state.viewportSize = Size(360f, 180f)
         state.setCenter(GeoPoint(latitude = 0.0, longitude = 90.0))
         // mapX for 90° = 270; offsetX = 180 - 270 = -90
         assertEquals(-90f, state.offsetX, absoluteTolerance = 0.01f)
         assertEquals(0f, state.offsetY, absoluteTolerance = 0.01f)
-        assertEquals(0.0, state.center.latitude, absoluteTolerance = 1e-4)
-        assertEquals(90.0, state.center.longitude, absoluteTolerance = 1e-4)
+        assertEquals(0.0, state.cameraCenter.latitude, absoluteTolerance = 1e-4)
+        assertEquals(90.0, state.cameraCenter.longitude, absoluteTolerance = 1e-4)
+        // Vertical aspect-ratio pivot unchanged; primary tile still fixed on ±180°
+        assertEquals(0.0, state.centerLatitude)
+        assertEquals(
+            180f,
+            MapProjection.longitudeToMapX(0.0, worldWidth = 360f),
+            absoluteTolerance = 0.01f,
+        )
     }
 
     @Test
@@ -106,8 +115,25 @@ class PlaneMapStateTest {
         val state = PlaneMapState(initialZoom = 1f)
         state.setCenter(GeoPoint(latitude = 45.0, longitude = 0.0))
         state.viewportSize = Size(360f, 180f)
-        assertEquals(45.0, state.center.latitude, absoluteTolerance = 1e-4)
-        assertEquals(0.0, state.center.longitude, absoluteTolerance = 1e-4)
+        assertEquals(45.0, state.cameraCenter.latitude, absoluteTolerance = 1e-3)
+        assertEquals(0.0, state.cameraCenter.longitude, absoluteTolerance = 1e-3)
+    }
+
+    @Test
+    fun verticalScalePivotsAroundCenterLatitude() {
+        val state = PlaneMapState(
+            initialZoom = 1f,
+            initialVerticalScale = 2f,
+            initialCenterLatitude = 45.0,
+        )
+        state.viewportSize = Size(360f, 180f)
+        val proj = state.projection()
+        val pivot = proj.toOffsetOnTile(GeoPoint(45.0, 0.0), tileX = 0)
+        val equator = proj.toOffsetOnTile(GeoPoint(0.0, 0.0), tileX = 0)
+        // Pivot latitude stays at its equirectangular screen Y (45° → mapY=45)
+        assertEquals(45f, pivot.y, absoluteTolerance = 0.01f)
+        // Equator is 45° of latitude south of the pivot; with scale 2 that gap doubles
+        assertEquals(45f + 45f * 2f, equator.y, absoluteTolerance = 0.01f)
     }
 
     @Test
@@ -115,14 +141,11 @@ class PlaneMapStateTest {
         val state = PlaneMapState(initialZoom = 2f)
         state.viewportSize = Size(400f, 200f)
         state.offsetY = 50f
-        // At zoom=2, scale=1: max=50 — ok
         state.verticalScale = 1f
         assertEquals(50f, state.offsetY, absoluteTolerance = 0.01f)
-        // Raising scale to 2 → zY=4 → max = 100*(1-1/4)=75, still ok
         state.verticalScale = 2f
-        assertTrue(state.offsetY <= 75f)
-        // Dropping back toward fit shrinks the allowed range
-        state.verticalScale = 0.5f // zY = 1 → max = 0
+        assertTrue(state.offsetY <= maxVerticalOffset(200f, 2f, 2f))
+        state.verticalScale = 0.5f
         assertEquals(0f, state.offsetY, absoluteTolerance = 0.01f)
     }
 }

@@ -10,13 +10,20 @@ import kotlin.math.cos
 import kotlin.math.max
 
 /**
- * Equirectangular projection.
+ * Equirectangular (Plate Carrée) projection.
  *
  * Horizontal looping is implemented by drawing three world copies (tileX = -1..1)
  * with **horizontal clip bands** — not by unwrapping wide polygons (oceans /
  * Antarctica), which caused fill inversions and missing geometry.
  *
- * [verticalScale] stretches the Y axis independently of [zoom] (1f = no stretch).
+ * The primary tile's antimeridian stays fixed at ±180° so Natural Earth polygons
+ * (pre-split on that meridian) remain valid. Camera centering uses [offsetX] /
+ * [offsetY] via [PlaneMapState.setCenter], not a shifted central meridian.
+ *
+ * [verticalScale] is an aspect-ratio adjustment along Y (1f = classic
+ * equirectangular). It is **not** spherical distortion centering: meridians stay
+ * parallel, and east-west stretch still grows as sec(φ) toward the poles.
+ * [centerLatitude] only picks the latitude that the Y stretch pivots around.
  */
 @Immutable
 internal data class MapProjection(
@@ -25,12 +32,17 @@ internal data class MapProjection(
     val offsetX: Float,
     val offsetY: Float,
     val verticalScale: Float = 1f,
+    val centerLatitude: Double = 0.0,
 ) {
     val worldWidth: Float get() = size.width
     val worldHeight: Float get() = size.height
 
-    /** Effective Y zoom including vertical deformation. */
+    /** Effective Y zoom for distances away from [centerLatitude]. */
     val zoomY: Float get() = zoom * verticalScale.coerceAtLeast(MinVerticalScale)
+
+    /** Map-Y of the vertical aspect-ratio pivot. */
+    val pivotY: Float
+        get() = latitudeToMapY(centerLatitude, size.height)
 
     /** Screen position for [point] on world copy [tileX] (`0` = primary). */
     fun toOffsetOnTile(point: GeoPoint, tileX: Int): Offset {
@@ -70,11 +82,15 @@ internal data class MapProjection(
         val cx = width / 2f
         val cy = height / 2f
         val zY = zoomY
+        val pivot = pivotY
         var mapX = (offset.x - cx) / zoom - offsetX + cx
-        val mapY = (offset.y - cy) / zY - offsetY + cy
+        // Inverse of:
+        // screenY = cy + (pivot - cy + offsetY) * zoom + (mapY - pivot) * zoomY
+        val mapY = pivot +
+            (offset.y - cy - (pivot - cy + offsetY) * zoom) / zY
         mapX = wrapInto(mapX, width)
-        val longitude = mapX / width * 360.0 - 180.0
-        val latitude = (90.0 - mapY / height * 180.0).coerceIn(-90.0, 90.0)
+        val longitude = mapXToLongitude(mapX, width)
+        val latitude = mapYToLatitude(mapY, height).coerceIn(-90.0, 90.0)
         return GeoPoint(latitude = latitude, longitude = longitude)
     }
 
@@ -105,12 +121,18 @@ internal data class MapProjection(
         )
     }
 
+    /**
+     * Vertical stretch pivots around [pivotY] ([centerLatitude]):
+     * distances from the pivot use [zoomY], while the pivot itself tracks
+     * with [zoom] + [offsetY] like the horizontal axis.
+     */
     internal fun mapToScreen(mapX: Float, mapY: Float): Offset {
         val cx = size.width / 2f
         val cy = size.height / 2f
+        val pivot = pivotY
         return Offset(
             x = cx + (mapX - cx + offsetX) * zoom,
-            y = cy + (mapY - cy + offsetY) * zoomY,
+            y = cy + (pivot - cy + offsetY) * zoom + (mapY - pivot) * zoomY,
         )
     }
 
@@ -121,17 +143,29 @@ internal data class MapProjection(
             offsetX = 0f,
             offsetY = 0f,
             verticalScale = 1f,
+            centerLatitude = 0.0,
         )
 
         val HorizontalWrapTiles: IntRange = -1..1
 
         const val MinVerticalScale = 0.1f
 
+        /** Longitude → map X with the primary tile fixed on ±180° (Greenwich at center). */
         fun longitudeToMapX(longitude: Double, worldWidth: Float): Float =
             ((longitude + 180.0) / 360.0 * worldWidth).toFloat()
 
+        fun mapXToLongitude(mapX: Float, worldWidth: Float): Double {
+            if (worldWidth <= 0f) return 0.0
+            return mapX / worldWidth * 360.0 - 180.0
+        }
+
         fun latitudeToMapY(latitude: Double, worldHeight: Float): Float =
             ((90.0 - latitude) / 180.0 * worldHeight).toFloat()
+
+        fun mapYToLatitude(mapY: Float, worldHeight: Float): Double {
+            if (worldHeight <= 0f) return 0.0
+            return 90.0 - mapY / worldHeight * 180.0
+        }
     }
 }
 
@@ -151,17 +185,36 @@ internal fun wrapOffsetCentered(value: Float, period: Float): Float {
 }
 
 /**
- * Max |offsetY| so the viewport stays inside the map canvas vertically.
- * When effective Y zoom ≤ 1 the map fits (or is smaller) — center it.
+ * Allowed [PlaneMapState.offsetY] range so the viewport stays inside the map
+ * canvas vertically, given the aspect-ratio pivot at [centerLatitude].
  */
+internal fun verticalOffsetBounds(
+    viewportHeight: Float,
+    zoom: Float,
+    verticalScale: Float,
+    centerLatitude: Double,
+): ClosedFloatingPointRange<Float> {
+    if (viewportHeight <= 0f || zoom <= 0f) return 0f..0f
+    val cy = viewportHeight / 2f
+    val pivot = MapProjection.latitudeToMapY(centerLatitude, viewportHeight)
+    val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
+    val zoomY = zoom * scale
+    val h = viewportHeight
+
+    // From mapY(screen) bounds: mapY(0) >= 0 and mapY(H) <= H.
+    val upper = (pivot * zoomY - cy - (pivot - cy) * zoom) / zoom
+    val lower = (h - cy - (h - pivot) * zoomY) / zoom - pivot + cy
+    val lo = minOf(lower, upper)
+    val hi = maxOf(lower, upper)
+    return lo..hi
+}
+
 internal fun maxVerticalOffset(
     viewportHeight: Float,
     zoom: Float,
     verticalScale: Float,
+    centerLatitude: Double = 0.0,
 ): Float {
-    if (viewportHeight <= 0f) return 0f
-    val zY = zoom * verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
-    if (zY <= 1f) return 0f
-    val cy = viewportHeight / 2f
-    return cy * (1f - 1f / zY)
+    val bounds = verticalOffsetBounds(viewportHeight, zoom, verticalScale, centerLatitude)
+    return maxOf(0f, -bounds.start, bounds.endInclusive)
 }

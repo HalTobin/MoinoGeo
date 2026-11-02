@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ class PlaneMapState(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     initialVerticalScale: Float = 1f,
+    initialCenterLatitude: Double = 0.0,
     // 1f = full world width visible; below that we'd need overlapping tiles (EvenOdd artifacts).
     val minZoom: Float = 1.0f,
     val maxZoom: Float = 12.0f,
@@ -33,13 +35,28 @@ class PlaneMapState(
     )
 
     /**
-     * Independent Y-axis stretch (1f = equirectangular aspect). Values above 1
-     * expand vertically; below 1 compress.
+     * Independent Y-axis aspect-ratio stretch (1f = equirectangular). Expansion
+     * pivots around [centerLatitude]. This does not change spherical distortion.
      */
     var verticalScale: Float
         get() = _verticalScale
         set(value) {
             _verticalScale = value.coerceAtLeast(MapProjection.MinVerticalScale)
+            clampVerticalOffset()
+        }
+
+    private var _centerLatitude by mutableDoubleStateOf(
+        initialCenterLatitude.coerceIn(-90.0, 90.0),
+    )
+
+    /**
+     * Geographic latitude that [verticalScale] expands from (0 = equator).
+     * Camera position is controlled separately via [setCenter] / [offsetX]/[offsetY].
+     */
+    var centerLatitude: Double
+        get() = _centerLatitude
+        set(value) {
+            _centerLatitude = value.coerceIn(-90.0, 90.0)
             clampVerticalOffset()
         }
 
@@ -51,16 +68,19 @@ class PlaneMapState(
             _viewportSize = value
             normalizeHorizontalOffset()
             clampVerticalOffset()
-            pendingCenter?.let { applyCenter(it) }
+            pendingCenter?.let { applyCameraCenter(it) }
         }
 
-    /** Geographic point currently under the viewport center. */
-    val center: GeoPoint
+    /** Geographic point currently under the viewport center (camera). */
+    val cameraCenter: GeoPoint
         get() {
             val size = viewportSize
             if (size.width <= 0f || size.height <= 0f) return GeoPoint(0.0, 0.0)
             return projection().toGeoPoint(Offset(size.width / 2f, size.height / 2f))
         }
+
+    @Deprecated("Use cameraCenter")
+    val center: GeoPoint get() = cameraCenter
 
     /** Applied once [viewportSize] becomes non-zero. */
     private var pendingCenter: GeoPoint? = null
@@ -97,38 +117,44 @@ class PlaneMapState(
     /** Pan in screen pixels (converted to map space). */
     fun panBy(deltaX: Float, deltaY: Float) {
         if (zoom == 0f) return
+        // offsetY is scaled by [zoom] in the projection (pivot frame), not zoomY.
         offsetX += deltaX / zoom
-        val zY = zoom * verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
-        if (zY != 0f) {
-            offsetY += deltaY / zY
-        }
+        offsetY += deltaY / zoom
         normalizeHorizontalOffset()
         clampVerticalOffset()
     }
 
     /**
-     * Centers the viewport on [point]. Horizontal wrap and vertical canvas
-     * clamps are applied afterward. If the viewport size is not known yet,
-     * the center is applied as soon as it becomes available.
+     * Pans the camera so [point] sits under the viewport center via [offsetX] /
+     * [offsetY]. Does **not** rematerialize polygons around a new central meridian
+     * (that would break Natural Earth seams). If the viewport size is not known
+     * yet, the camera center is applied as soon as it becomes available.
      */
     fun setCenter(point: GeoPoint) {
         cancelZoomAnimation()
         pendingCenter = point
-        applyCenter(point)
+        applyCameraCenter(point)
         doubleTapZoomedIn = false
     }
 
-    private fun applyCenter(point: GeoPoint) {
+    private fun applyCameraCenter(point: GeoPoint) {
         val width = viewportSize.width
         val height = viewportSize.height
         if (width <= 0f || height <= 0f) return
 
+        val cx = width / 2f
+        val cy = height / 2f
         val mapX = MapProjection.longitudeToMapX(point.longitude, width)
         val mapY = MapProjection.latitudeToMapY(point.latitude, height)
-        val desiredOffsetY = height / 2f - mapY
-        ensureVerticalRoomForOffset(desiredOffsetY)
+        val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
+        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
 
-        offsetX = width / 2f - mapX
+        offsetX = cx - mapX
+        // screenY(cy) ⇒ offsetY = cy - pivot - (mapY - pivot) * verticalScale
+        var desiredOffsetY = cy - pivot - (mapY - pivot) * scale
+        ensureVerticalRoomForOffset(desiredOffsetY)
+        // Recompute after possible zoom bump (scale unchanged).
+        desiredOffsetY = cy - pivot - (mapY - pivot) * scale
         offsetY = desiredOffsetY
         normalizeHorizontalOffset()
         clampVerticalOffset()
@@ -136,23 +162,23 @@ class PlaneMapState(
     }
 
     /**
-     * Bumps [zoom] (within [minZoom]..[maxZoom]) so |[desiredOffsetY]| stays
-     * inside the vertical canvas clamp. Extreme latitudes near the poles may
-     * still be clamped when [maxZoom] is insufficient.
+     * Bumps [zoom] so [desiredOffsetY] stays inside the vertical canvas clamp.
      */
     private fun ensureVerticalRoomForOffset(desiredOffsetY: Float) {
         val height = viewportSize.height
         if (height <= 0f) return
-        val cy = height / 2f
-        val absDesired = kotlin.math.abs(desiredOffsetY)
-        // Need room strictly inside the canvas; poles (|offsetY| == cy) are unreachable.
-        if (absDesired < 1e-3f || absDesired >= cy - 1e-3f) return
-
-        val minZY = 1f / (1f - absDesired / cy)
-        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
-        val neededZoom = (minZY / scale).coerceIn(minZoom, maxZoom)
-        if (neededZoom > zoom) {
-            zoom = neededZoom
+        // Grow zoom until the desired offset fits or maxZoom is hit.
+        var guard = 0
+        while (guard++ < 24) {
+            val bounds = verticalOffsetBounds(
+                viewportHeight = height,
+                zoom = zoom,
+                verticalScale = verticalScale,
+                centerLatitude = centerLatitude,
+            )
+            if (desiredOffsetY in bounds) return
+            if (zoom >= maxZoom - 1e-4f) return
+            zoom = (zoom * 1.15f).coerceAtMost(maxZoom)
         }
     }
 
@@ -162,6 +188,7 @@ class PlaneMapState(
         offsetX = 0f
         offsetY = 0f
         verticalScale = 1f
+        centerLatitude = 0.0
         doubleTapZoomedIn = false
         doubleTapBaselineZoom = 1.0f
     }
@@ -198,14 +225,7 @@ class PlaneMapState(
         val endZoom = targetZoom.coerceIn(minZoom, maxZoom)
         if (kotlin.math.abs(endZoom - startZoom) < 1e-4f) return
 
-        val cx = width / 2f
-        val cy = height / 2f
-        val startOx = offsetX
-        val startOy = offsetY
-        val endOx = startOx + (focalX - cx) * (1f / endZoom - 1f / startZoom)
-        val startZY = startZoom * verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
-        val endZY = endZoom * verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
-        val endOy = startOy + (focalY - cy) * (1f / endZY - 1f / startZY)
+        val focalGeo = projection().toGeoPoint(Offset(focalX, focalY))
 
         animate(
             initialValue = 0f,
@@ -213,8 +233,7 @@ class PlaneMapState(
             animationSpec = tween(durationMillis = DoubleTapZoomMillis),
         ) { t, _ ->
             zoom = startZoom + (endZoom - startZoom) * t
-            offsetX = startOx + (endOx - startOx) * t
-            offsetY = startOy + (endOy - startOy) * t
+            keepGeoAtScreen(focalGeo, focalX, focalY)
             clampVerticalOffset()
         }
         normalizeHorizontalOffset()
@@ -230,16 +249,28 @@ class PlaneMapState(
         val newZoom = (oldZoom * factor).coerceIn(minZoom, maxZoom)
         if (newZoom == oldZoom) return
 
-        val cx = width / 2f
-        val cy = height / 2f
-        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
-        val oldZY = oldZoom * scale
-        val newZY = newZoom * scale
-        offsetX += (focalX - cx) * (1f / newZoom - 1f / oldZoom)
-        offsetY += (focalY - cy) * (1f / newZY - 1f / oldZY)
+        val focalGeo = projection().toGeoPoint(Offset(focalX, focalY))
         zoom = newZoom
+        keepGeoAtScreen(focalGeo, focalX, focalY)
         normalizeHorizontalOffset()
         clampVerticalOffset()
+    }
+
+    /** Adjusts pan offsets so [geo] projects to ([screenX], [screenY]). */
+    private fun keepGeoAtScreen(geo: GeoPoint, screenX: Float, screenY: Float) {
+        val width = viewportSize.width
+        val height = viewportSize.height
+        if (width <= 0f || height <= 0f || zoom == 0f) return
+
+        val cx = width / 2f
+        val cy = height / 2f
+        val mapX = MapProjection.longitudeToMapX(geo.longitude, width)
+        val mapY = MapProjection.latitudeToMapY(geo.latitude, height)
+        val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
+        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
+
+        offsetX = (screenX - cx) / zoom - mapX + cx
+        offsetY = (screenY - cy) / zoom - (pivot - cy) - (mapY - pivot) * scale
     }
 
     private fun cancelZoomAnimation() {
@@ -255,12 +286,13 @@ class PlaneMapState(
     }
 
     internal fun clampVerticalOffset() {
-        val maxOffset = maxVerticalOffset(
+        val bounds = verticalOffsetBounds(
             viewportHeight = viewportSize.height,
             zoom = zoom,
             verticalScale = verticalScale,
+            centerLatitude = centerLatitude,
         )
-        offsetY = offsetY.coerceIn(-maxOffset, maxOffset)
+        offsetY = offsetY.coerceIn(bounds.start, bounds.endInclusive)
     }
 
     internal fun projection(): MapProjection =
@@ -270,6 +302,7 @@ class PlaneMapState(
             offsetX = offsetX,
             offsetY = offsetY,
             verticalScale = verticalScale,
+            centerLatitude = centerLatitude,
         )
 
     private companion object {
@@ -284,6 +317,7 @@ fun rememberPlaneMapState(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     initialVerticalScale: Float = 1f,
+    initialCenterLatitude: Double = 0.0,
     minZoom: Float = 1.0f,
     maxZoom: Float = 12.0f,
 ): PlaneMapState {
@@ -293,6 +327,7 @@ fun rememberPlaneMapState(
             initialOffsetX = initialOffsetX,
             initialOffsetY = initialOffsetY,
             initialVerticalScale = initialVerticalScale,
+            initialCenterLatitude = initialCenterLatitude,
             minZoom = minZoom,
             maxZoom = maxZoom,
         )
