@@ -5,5 +5,7 @@ import androidx.compose.ui.graphics.Color
 data class BorderStyle(
     val lineColor: Color = Color(0xFF333333),
     val lineWidth: Float = 1.5f,
-    val dashPattern: List<Float>? = null
+    val dashPattern: List<Float>? = null,
+    /** When true, [lineWidth] is multiplied by the map zoom. */
+    val scaleWithZoom: Boolean = true,
 )

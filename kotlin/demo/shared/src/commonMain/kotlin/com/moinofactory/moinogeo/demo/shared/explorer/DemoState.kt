@@ -23,4 +23,10 @@ internal data class DemoState(
     val searchResults: List<GeoPlace> = emptyList(),
     val isSearching: Boolean = false,
     val selectedPlace: GeoPlace? = null,
+
+    /** Independent Y stretch for [com.moinofactory.moinogeo.maps.plane.PlaneMap]. */
+    val mapVerticalScale: Float = 1f,
+    val mapCenterLatitude: Float = 0f,
+    val mapCenterLongitude: Float = 0f,
+    val mapBordersScaleWithZoom: Boolean = true,
 )

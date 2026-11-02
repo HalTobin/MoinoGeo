@@ -21,6 +21,11 @@ internal sealed class DemoAction {
     data class SelectFlagLibrary(val library: FlagLibraryType) : DemoAction()
     data class SelectViewMode(val mode: FlagViewMode) : DemoAction()
 
+    data class SetMapVerticalScale(val scale: Float) : DemoAction()
+    data class SetMapCenterLatitude(val latitude: Float) : DemoAction()
+    data class SetMapCenterLongitude(val longitude: Float) : DemoAction()
+    data class SetMapBordersScaleWithZoom(val scaleWithZoom: Boolean) : DemoAction()
+
     data class InspectCountry(val country: Country) : DemoAction()
     data object DismissCountryDetail : DemoAction()
 }

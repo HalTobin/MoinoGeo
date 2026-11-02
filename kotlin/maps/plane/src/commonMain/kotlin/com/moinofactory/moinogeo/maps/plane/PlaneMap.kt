@@ -13,6 +13,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.toSize
 import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
 import com.moinofactory.moinogeo.maps.core.BoundaryProvider
+import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.MapStyle
 import com.moinofactory.moinogeo.maps.core.TopoZone
 import com.moinofactory.moinogeo.maps.core.TopographyProvider
@@ -23,6 +24,9 @@ import com.moinofactory.moinogeo.maps.topography.DefaultTopographyProvider
  * overlays are declared in [content] via [MapScope] (`Marker`, `Circle`, `Area`).
  *
  * Horizontal looping draws three world copies with per-tile horizontal clip bands.
+ *
+ * @param onMapClick Optional tap callback with the geographic point under the
+ * pointer. Omit (or pass `null`) when clicks are not needed.
  */
 @Composable
 fun PlaneMap(
@@ -31,6 +35,7 @@ fun PlaneMap(
     boundaryProvider: BoundaryProvider = remember { DefaultBoundaryProvider() },
     topographyProvider: TopographyProvider = remember { DefaultTopographyProvider() },
     state: PlaneMapState = rememberPlaneMapState(),
+    onMapClick: ((GeoPoint) -> Unit)? = null,
     content: @Composable MapScope.() -> Unit = {},
 ) {
     val boundaryData = remember(boundaryProvider) { boundaryProvider.getBoundaryData() }
@@ -42,19 +47,21 @@ fun PlaneMap(
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { state.viewportSize = it.toSize() }
-            .mapGestures(state, gestureScope),
+            .mapGestures(state, gestureScope, onMapClick),
     ) {
         val projection = remember(
             state.viewportSize,
             state.zoom,
             state.offsetX,
             state.offsetY,
+            state.verticalScale,
         ) {
             MapProjection(
                 size = state.viewportSize,
                 zoom = state.zoom,
                 offsetX = state.offsetX,
                 offsetY = state.offsetY,
+                verticalScale = state.verticalScale,
             )
         }
 
@@ -64,6 +71,7 @@ fun PlaneMap(
                 zoom = state.zoom,
                 offsetX = state.offsetX,
                 offsetY = state.offsetY,
+                verticalScale = state.verticalScale,
             )
 
             // Ocean is the canvas base so missing/clipped water polygons never
@@ -102,7 +110,11 @@ fun PlaneMap(
                     }
 
                     if (mapStyle.showBorders) {
-                        val strokeWidth = mapStyle.borderStyle.lineWidth * state.zoom
+                        val strokeWidth = if (mapStyle.borderStyle.scaleWithZoom) {
+                            mapStyle.borderStyle.lineWidth * state.zoom
+                        } else {
+                            mapStyle.borderStyle.lineWidth
+                        }
                         for (feature in boundaryData.features) {
                             for (polygon in feature.geometries) {
                                 val path = polygon.toBorderPath(proj, tx) ?: continue

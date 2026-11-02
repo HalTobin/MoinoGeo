@@ -25,6 +25,20 @@ class MapProjectionTest {
     }
 
     @Test
+    fun verticalScaleStretchesYOnly() {
+        val stretched = projection.copy(verticalScale = 2f)
+        val point = GeoPoint(latitude = 45.0, longitude = 0.0)
+        val base = projection.toOffsetOnTile(point, tileX = 0)
+        val scaled = stretched.toOffsetOnTile(point, tileX = 0)
+        assertEquals(base.x, scaled.x, absoluteTolerance = 0.01f)
+        // 45°N is above center; stretch pushes it farther from cy
+        assertTrue(scaled.y < base.y)
+        val back = stretched.toGeoPoint(scaled)
+        assertEquals(point.latitude, back.latitude, absoluteTolerance = 1e-4)
+        assertEquals(point.longitude, back.longitude, absoluteTolerance = 1e-4)
+    }
+
+    @Test
     fun roundTripsGeoPoint() {
         val original = GeoPoint(latitude = 48.8566, longitude = 2.3522)
         val back = projection.toGeoPoint(projection.toOffset(original))
@@ -198,5 +212,40 @@ class MapProjectionTest {
         )
         assertTrue(ocean.isWorldSpanning())
         assertFalse(lake.isWorldSpanning())
+    }
+
+    @Test
+    fun polygonContainsPointAndHoles() {
+        val square = GeoPolygon(
+            outerBounds = listOf(
+                GeoPoint(0.0, 0.0),
+                GeoPoint(0.0, 10.0),
+                GeoPoint(10.0, 10.0),
+                GeoPoint(10.0, 0.0),
+                GeoPoint(0.0, 0.0),
+            ),
+            innerHoles = listOf(
+                listOf(
+                    GeoPoint(3.0, 3.0),
+                    GeoPoint(3.0, 6.0),
+                    GeoPoint(6.0, 6.0),
+                    GeoPoint(6.0, 3.0),
+                    GeoPoint(3.0, 3.0),
+                ),
+            ),
+        )
+        assertTrue(square.contains(GeoPoint(1.0, 1.0)))
+        assertFalse(square.contains(GeoPoint(4.0, 4.0))) // hole
+        assertFalse(square.contains(GeoPoint(20.0, 20.0)))
+    }
+
+    @Test
+    fun maxVerticalOffsetAtFitIsZero() {
+        assertEquals(0f, maxVerticalOffset(200f, zoom = 1f, verticalScale = 1f))
+        assertEquals(
+            50f,
+            maxVerticalOffset(200f, zoom = 2f, verticalScale = 1f),
+            absoluteTolerance = 0.01f,
+        )
     }
 }

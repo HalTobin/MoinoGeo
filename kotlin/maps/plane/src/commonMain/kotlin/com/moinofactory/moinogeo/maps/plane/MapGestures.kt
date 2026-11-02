@@ -7,18 +7,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import com.moinofactory.moinogeo.maps.core.GeoPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private const val WheelZoomFactor = 1.12f
 
 /**
- * Pan (drag / pinch-pan), pinch-zoom, mouse-wheel zoom, and animated
- * double-tap zoom toggle — all focused on the pointer / gesture centroid.
+ * Pan (drag / pinch-pan), pinch-zoom, mouse-wheel zoom, animated double-tap
+ * zoom toggle, and optional single-tap [onMapClick] — all focused on the
+ * pointer / gesture centroid.
  */
 internal fun Modifier.mapGestures(
     state: PlaneMapState,
     scope: CoroutineScope,
+    onMapClick: ((GeoPoint) -> Unit)? = null,
 ): Modifier =
     this
         .pointerInput(state) {
@@ -31,8 +34,13 @@ internal fun Modifier.mapGestures(
                 }
             }
         }
-        .pointerInput(state, scope) {
+        .pointerInput(state, scope, onMapClick) {
             detectTapGestures(
+                onTap = onMapClick?.let { callback ->
+                    { pos ->
+                        callback(state.projection().toGeoPoint(pos))
+                    }
+                },
                 onDoubleTap = { pos ->
                     scope.launch {
                         state.animateDoubleTapZoom(pos.x, pos.y)

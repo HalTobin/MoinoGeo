@@ -124,8 +124,18 @@ internal fun DemoScreenContent(
         FlagSettingsDialog(
             selectedLibrary = state.selectedLibrary,
             selectedViewMode = state.selectedViewMode,
+            mapVerticalScale = state.mapVerticalScale,
+            mapCenterLatitude = state.mapCenterLatitude,
+            mapCenterLongitude = state.mapCenterLongitude,
+            mapBordersScaleWithZoom = state.mapBordersScaleWithZoom,
             onLibrarySelected = { onAction(DemoAction.SelectFlagLibrary(it)) },
             onViewModeSelected = { onAction(DemoAction.SelectViewMode(it)) },
+            onMapVerticalScaleChange = { onAction(DemoAction.SetMapVerticalScale(it)) },
+            onMapCenterLatitudeChange = { onAction(DemoAction.SetMapCenterLatitude(it)) },
+            onMapCenterLongitudeChange = { onAction(DemoAction.SetMapCenterLongitude(it)) },
+            onMapBordersScaleWithZoomChange = {
+                onAction(DemoAction.SetMapBordersScaleWithZoom(it))
+            },
             onDismiss = { onAction(DemoAction.CloseSettings) },
         )
     }
@@ -149,6 +159,10 @@ private fun ExpandedDemoLayout(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
+            verticalScale = state.mapVerticalScale,
+            centerLatitude = state.mapCenterLatitude,
+            centerLongitude = state.mapCenterLongitude,
+            bordersScaleWithZoom = state.mapBordersScaleWithZoom,
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -198,6 +212,10 @@ private fun CompactDemoLayout(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
+            verticalScale = state.mapVerticalScale,
+            centerLatitude = state.mapCenterLatitude,
+            centerLongitude = state.mapCenterLongitude,
+            bordersScaleWithZoom = state.mapBordersScaleWithZoom,
         )
     }
 }

@@ -153,3 +153,32 @@ internal fun GeoPolygon.isWorldSpanning(thresholdDegrees: Double = 300.0): Boole
     }
     return (maxLon - minLon) >= thresholdDegrees
 }
+
+/** Ray-casting hit test; holes punch out of the outer ring. */
+internal fun GeoPolygon.contains(point: GeoPoint): Boolean {
+    if (!isPointInRing(point, outerBounds)) return false
+    for (hole in innerHoles) {
+        if (isPointInRing(point, hole)) return false
+    }
+    return true
+}
+
+private fun isPointInRing(point: GeoPoint, ring: List<GeoPoint>): Boolean {
+    if (ring.size < 3) return false
+    var inside = false
+    var j = ring.size - 1
+    for (i in ring.indices) {
+        val pi = ring[i]
+        val pj = ring[j]
+        if ((pi.longitude > point.longitude) != (pj.longitude > point.longitude)) {
+            val latAtLon = (pj.latitude - pi.latitude) *
+                (point.longitude - pi.longitude) /
+                (pj.longitude - pi.longitude) + pi.latitude
+            if (point.latitude < latAtLon) {
+                inside = !inside
+            }
+        }
+        j = i
+    }
+    return inside
+}

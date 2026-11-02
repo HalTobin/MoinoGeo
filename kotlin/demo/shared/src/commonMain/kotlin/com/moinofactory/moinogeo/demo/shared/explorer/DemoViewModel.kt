@@ -77,6 +77,19 @@ internal class DemoViewModel(
             is DemoAction.SelectFlagLibrary -> onSelectFlagLibrary(action.library)
             is DemoAction.SelectViewMode -> _state.update { it.copy(selectedViewMode = action.mode) }
 
+            is DemoAction.SetMapVerticalScale -> _state.update {
+                it.copy(mapVerticalScale = action.scale.coerceIn(0.5f, 2.5f))
+            }
+            is DemoAction.SetMapCenterLatitude -> _state.update {
+                it.copy(mapCenterLatitude = action.latitude.coerceIn(-90f, 90f))
+            }
+            is DemoAction.SetMapCenterLongitude -> _state.update {
+                it.copy(mapCenterLongitude = action.longitude.coerceIn(-180f, 180f))
+            }
+            is DemoAction.SetMapBordersScaleWithZoom -> _state.update {
+                it.copy(mapBordersScaleWithZoom = action.scaleWithZoom)
+            }
+
             is DemoAction.InspectCountry -> _state.update { it.copy(inspectedCountry = action.country) }
             DemoAction.DismissCountryDetail -> _state.update { it.copy(inspectedCountry = null) }
         }

@@ -15,6 +15,8 @@ import kotlin.math.max
  * Horizontal looping is implemented by drawing three world copies (tileX = -1..1)
  * with **horizontal clip bands** — not by unwrapping wide polygons (oceans /
  * Antarctica), which caused fill inversions and missing geometry.
+ *
+ * [verticalScale] stretches the Y axis independently of [zoom] (1f = no stretch).
  */
 @Immutable
 internal data class MapProjection(
@@ -22,9 +24,13 @@ internal data class MapProjection(
     val zoom: Float,
     val offsetX: Float,
     val offsetY: Float,
+    val verticalScale: Float = 1f,
 ) {
     val worldWidth: Float get() = size.width
     val worldHeight: Float get() = size.height
+
+    /** Effective Y zoom including vertical deformation. */
+    val zoomY: Float get() = zoom * verticalScale.coerceAtLeast(MinVerticalScale)
 
     /** Screen position for [point] on world copy [tileX] (`0` = primary). */
     fun toOffsetOnTile(point: GeoPoint, tileX: Int): Offset {
@@ -63,8 +69,9 @@ internal data class MapProjection(
 
         val cx = width / 2f
         val cy = height / 2f
+        val zY = zoomY
         var mapX = (offset.x - cx) / zoom - offsetX + cx
-        val mapY = (offset.y - cy) / zoom - offsetY + cy
+        val mapY = (offset.y - cy) / zY - offsetY + cy
         mapX = wrapInto(mapX, width)
         val longitude = mapX / width * 360.0 - 180.0
         val latitude = (90.0 - mapY / height * 180.0).coerceIn(-90.0, 90.0)
@@ -103,14 +110,22 @@ internal data class MapProjection(
         val cy = size.height / 2f
         return Offset(
             x = cx + (mapX - cx + offsetX) * zoom,
-            y = cy + (mapY - cy + offsetY) * zoom,
+            y = cy + (mapY - cy + offsetY) * zoomY,
         )
     }
 
     companion object {
-        val Empty = MapProjection(Size.Zero, zoom = 1f, offsetX = 0f, offsetY = 0f)
+        val Empty = MapProjection(
+            Size.Zero,
+            zoom = 1f,
+            offsetX = 0f,
+            offsetY = 0f,
+            verticalScale = 1f,
+        )
 
         val HorizontalWrapTiles: IntRange = -1..1
+
+        const val MinVerticalScale = 0.1f
 
         fun longitudeToMapX(longitude: Double, worldWidth: Float): Float =
             ((longitude + 180.0) / 360.0 * worldWidth).toFloat()
@@ -133,4 +148,20 @@ internal fun wrapOffsetCentered(value: Float, period: Float): Float {
     if (v > period / 2f) v -= period
     if (v < -period / 2f) v += period
     return v
+}
+
+/**
+ * Max |offsetY| so the viewport stays inside the map canvas vertically.
+ * When effective Y zoom ≤ 1 the map fits (or is smaller) — center it.
+ */
+internal fun maxVerticalOffset(
+    viewportHeight: Float,
+    zoom: Float,
+    verticalScale: Float,
+): Float {
+    if (viewportHeight <= 0f) return 0f
+    val zY = zoom * verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
+    if (zY <= 1f) return 0f
+    val cy = viewportHeight / 2f
+    return cy * (1f - 1f / zY)
 }

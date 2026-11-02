@@ -35,6 +35,7 @@ object MapDefaults {
      * @param neutralColor Color for [TopoZone.NEUTRAL] regions.
      * @param borderColor Color for map boundary/border lines.
      * @param borderWidth Width of map boundary/border lines in pixels.
+     * @param borderScaleWithZoom Whether border width scales with map zoom.
      * @param showBorders Whether boundary lines should be displayed.
      * @param showTopography Whether topography zone fills should be displayed.
      */
@@ -51,6 +52,7 @@ object MapDefaults {
         neutralColor: Color = Color(0xFFD7CCC8),
         borderColor: Color = Color(0xFF333333),
         borderWidth: Float = 1.5f,
+        borderScaleWithZoom: Boolean = true,
         showBorders: Boolean = true,
         showTopography: Boolean = true
     ): MapStyle {
@@ -68,7 +70,8 @@ object MapDefaults {
             ),
             borderStyle = BorderStyle(
                 lineColor = borderColor,
-                lineWidth = borderWidth
+                lineWidth = borderWidth,
+                scaleWithZoom = borderScaleWithZoom,
             ),
             showBorders = showBorders,
             showTopography = showTopography
