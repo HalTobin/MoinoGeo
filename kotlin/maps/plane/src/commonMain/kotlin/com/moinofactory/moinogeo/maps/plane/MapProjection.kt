@@ -8,6 +8,7 @@ import com.moinofactory.moinogeo.maps.core.GeoPoint
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.sin
 
 /**
  * Equirectangular (Plate Carrée) projection.
@@ -33,6 +34,7 @@ internal data class MapProjection(
     val offsetY: Float,
     val verticalScale: Float = 1f,
     val centerLatitude: Double = 0.0,
+    val rotationAngle: Float = 0f,
 ) {
     val worldWidth: Float get() = size.width
     val worldHeight: Float get() = size.height
@@ -40,7 +42,7 @@ internal data class MapProjection(
     /** Effective Y zoom for distances away from [centerLatitude]. */
     val zoomY: Float get() = zoom * verticalScale.coerceAtLeast(MinVerticalScale)
 
-    /** Map-Y of the vertical aspect-ratio pivot. */
+    /** Map-Y of the vertical aspect-ratio pivot ([centerLatitude]). */
     val pivotY: Float
         get() = latitudeToMapY(centerLatitude, size.height)
 
@@ -81,13 +83,25 @@ internal data class MapProjection(
 
         val cx = width / 2f
         val cy = height / 2f
-        val zY = zoomY
         val pivot = pivotY
-        var mapX = (offset.x - cx) / zoom - offsetX + cx
-        // Inverse of:
-        // screenY = cy + (pivot - cy + offsetY) * zoom + (mapY - pivot) * zoomY
+        val zY = zoomY
+
+        var screenX = offset.x
+        var screenY = offset.y
+
+        if (rotationAngle != 0f) {
+            val rad = rotationAngle * (PI / 180.0).toFloat()
+            val cosR = cos(rad)
+            val sinR = sin(rad)
+            val dx = offset.x - cx
+            val dy = offset.y - cy
+            screenX = cx + dx * cosR + dy * sinR
+            screenY = cy - dx * sinR + dy * cosR
+        }
+
+        var mapX = (screenX - cx) / zoom - offsetX + cx
         val mapY = pivot +
-            (offset.y - cy - (pivot - cy + offsetY) * zoom) / zY
+            (screenY - cy - offsetY * zoom) / zY
         mapX = wrapInto(mapX, width)
         val longitude = mapXToLongitude(mapX, width)
         val latitude = mapYToLatitude(mapY, height).coerceIn(-90.0, 90.0)
@@ -130,9 +144,23 @@ internal data class MapProjection(
         val cx = size.width / 2f
         val cy = size.height / 2f
         val pivot = pivotY
+        val zY = zoomY
+
+        val uX = cx + (mapX - cx + offsetX) * zoom
+        val uY = cy + offsetY * zoom + (mapY - pivot) * zY
+
+        if (rotationAngle == 0f) {
+            return Offset(uX, uY)
+        }
+
+        val rad = rotationAngle * (PI / 180.0).toFloat()
+        val cosR = cos(rad)
+        val sinR = sin(rad)
+        val dx = uX - cx
+        val dy = uY - cy
         return Offset(
-            x = cx + (mapX - cx + offsetX) * zoom,
-            y = cy + (pivot - cy + offsetY) * zoom + (mapY - pivot) * zoomY,
+            x = cx + dx * cosR - dy * sinR,
+            y = cy + dx * sinR + dy * cosR,
         )
     }
 
@@ -144,6 +172,7 @@ internal data class MapProjection(
             offsetY = 0f,
             verticalScale = 1f,
             centerLatitude = 0.0,
+            rotationAngle = 0f,
         )
 
         val HorizontalWrapTiles: IntRange = -1..1
@@ -201,9 +230,8 @@ internal fun verticalOffsetBounds(
     val zoomY = zoom * scale
     val h = viewportHeight
 
-    // From mapY(screen) bounds: mapY(0) >= 0 and mapY(H) <= H.
-    val upper = (pivot * zoomY - cy - (pivot - cy) * zoom) / zoom
-    val lower = (h - cy - (h - pivot) * zoomY) / zoom - pivot + cy
+    val upper = (pivot * zoomY - cy) / zoom
+    val lower = (h - cy - (h - pivot) * zoomY) / zoom
     val lo = minOf(lower, upper)
     val hi = maxOf(lower, upper)
     return lo..hi

@@ -1,12 +1,16 @@
 package com.moinofactory.moinogeo.demo.shared.explorer.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -24,6 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.core.domain.model.GeoPlaceType
+import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
+import com.moinofactory.moinogeo.demo.shared.ui.icon.settings
 import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
 import com.moinofactory.moinogeo.maps.core.BoundaryFeature
 import com.moinofactory.moinogeo.maps.core.GeoPoint
@@ -47,7 +54,9 @@ internal fun DemoMap(
     verticalScale: Float = 1f,
     centerLatitude: Float = 0f,
     centerLongitude: Float = 0f,
+    rotationAngle: Float = 0f,
     bordersScaleWithZoom: Boolean = true,
+    onOpenMapSettings: (() -> Unit)? = null,
 ) {
     val boundaryProvider = remember { DefaultBoundaryProvider() }
     val topographyProvider = remember { DefaultTopographyProvider() }
@@ -59,9 +68,11 @@ internal fun DemoMap(
     LaunchedEffect(verticalScale) {
         mapState.verticalScale = verticalScale
     }
+    LaunchedEffect(rotationAngle) {
+        mapState.rotationAngle = rotationAngle
+    }
     LaunchedEffect(centerLatitude, centerLongitude) {
-        // Camera pan via offsetX/offsetY — never shift the projection meridian
-        // (that breaks Natural Earth polygons pre-split at ±180°).
+        mapState.centerLatitude = centerLatitude.toDouble()
         mapState.setCenter(
             GeoPoint(
                 latitude = centerLatitude.toDouble(),
@@ -96,50 +107,74 @@ internal fun DemoMap(
             shape = RoundedCornerShape(16.dp),
             tonalElevation = 1.dp,
         ) {
-            PlaneMap(
-                modifier = Modifier.fillMaxSize(),
-                mapStyle = MapDefaults.style(
-                    borderWidth = 1f,
-                    borderColor = Color(0xFF455A64),
-                    borderScaleWithZoom = bordersScaleWithZoom,
-                ),
-                boundaryProvider = boundaryProvider,
-                topographyProvider = topographyProvider,
-                state = mapState,
-                onMapClick = { point ->
-                    clickedPoint = point
-                    overlayClickLabel = null
-                },
-            ) {
-                selectedCountryFeature?.let { feature ->
-                    Area(
-                        geometries = feature.geometries,
-                        fillColor = HighlightFill,
-                        borderColor = HighlightBorder,
-                        borderWidth = 2.5f,
-                        onClick = {
-                            overlayClickLabel = selectedPlace?.name ?: feature.isoCode
-                            clickedPoint = null
-                        },
-                    )
+            Box(modifier = Modifier.fillMaxSize()) {
+                PlaneMap(
+                    modifier = Modifier.fillMaxSize(),
+                    mapStyle = MapDefaults.style(
+                        borderWidth = 1f,
+                        borderColor = Color(0xFF455A64),
+                        borderScaleWithZoom = bordersScaleWithZoom,
+                    ),
+                    boundaryProvider = boundaryProvider,
+                    topographyProvider = topographyProvider,
+                    state = mapState,
+                    onMapClick = { point ->
+                        clickedPoint = point
+                        overlayClickLabel = null
+                    },
+                ) {
+                    selectedCountryFeature?.let { feature ->
+                        Area(
+                            geometries = feature.geometries,
+                            fillColor = HighlightFill,
+                            borderColor = HighlightBorder,
+                            borderWidth = 2.5f,
+                            onClick = {
+                                overlayClickLabel = selectedPlace?.name ?: feature.isoCode
+                                clickedPoint = null
+                            },
+                        )
+                    }
+
+                    if (markerPoint != null && selectedPlace != null) {
+                        Marker(
+                            position = markerPoint,
+                            onClick = {
+                                overlayClickLabel = selectedPlace.name
+                                clickedPoint = markerPoint
+                            },
+                        ) {
+                            Text(
+                                text = selectedPlace.name,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF212121),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
                 }
 
-                if (markerPoint != null && selectedPlace != null) {
-                    Marker(
-                        position = markerPoint,
-                        onClick = {
-                            overlayClickLabel = selectedPlace.name
-                            clickedPoint = markerPoint
-                        },
+                if (onOpenMapSettings != null) {
+                    IconButton(
+                        onClick = onOpenMapSettings,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp),
                     ) {
-                        Text(
-                            text = selectedPlace.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF212121),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                            tonalElevation = 3.dp,
+                        ) {
+                            Icon(
+                                imageVector = Icons.settings,
+                                contentDescription = "Map Settings",
+                                modifier = Modifier.padding(8.dp),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 }
             }

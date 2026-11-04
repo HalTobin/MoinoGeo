@@ -27,8 +27,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moinofactory.moinogeo.core.domain.MoinoGeoService
 import com.moinofactory.moinogeo.demo.shared.explorer.components.CountryListPane
-import com.moinofactory.moinogeo.demo.shared.explorer.components.FlagSettingsDialog
 import com.moinofactory.moinogeo.demo.shared.explorer.components.DemoMap
+import com.moinofactory.moinogeo.demo.shared.explorer.components.FlagSettingsDialog
+import com.moinofactory.moinogeo.demo.shared.explorer.components.MapSettingsDialog
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchBar
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchDialog
 import com.moinofactory.moinogeo.demo.shared.flags.FlagDetailDialog
@@ -80,7 +81,7 @@ internal fun DemoScreenContent(
                     ) {
                         Icon(
                             imageVector = Icons.settings,
-                            contentDescription = null
+                            contentDescription = "App Settings"
                         )
                     }
                 },
@@ -124,19 +125,27 @@ internal fun DemoScreenContent(
         FlagSettingsDialog(
             selectedLibrary = state.selectedLibrary,
             selectedViewMode = state.selectedViewMode,
+            onLibrarySelected = { onAction(DemoAction.SelectFlagLibrary(it)) },
+            onViewModeSelected = { onAction(DemoAction.SelectViewMode(it)) },
+            onDismiss = { onAction(DemoAction.CloseSettings) },
+        )
+    }
+
+    if (state.isMapSettingsOpen) {
+        MapSettingsDialog(
             mapVerticalScale = state.mapVerticalScale,
             mapCenterLatitude = state.mapCenterLatitude,
             mapCenterLongitude = state.mapCenterLongitude,
+            mapRotationAngle = state.mapRotationAngle,
             mapBordersScaleWithZoom = state.mapBordersScaleWithZoom,
-            onLibrarySelected = { onAction(DemoAction.SelectFlagLibrary(it)) },
-            onViewModeSelected = { onAction(DemoAction.SelectViewMode(it)) },
             onMapVerticalScaleChange = { onAction(DemoAction.SetMapVerticalScale(it)) },
             onMapCenterLatitudeChange = { onAction(DemoAction.SetMapCenterLatitude(it)) },
             onMapCenterLongitudeChange = { onAction(DemoAction.SetMapCenterLongitude(it)) },
+            onMapRotationAngleChange = { onAction(DemoAction.SetMapRotationAngle(it)) },
             onMapBordersScaleWithZoomChange = {
                 onAction(DemoAction.SetMapBordersScaleWithZoom(it))
             },
-            onDismiss = { onAction(DemoAction.CloseSettings) },
+            onDismiss = { onAction(DemoAction.CloseMapSettings) },
         )
     }
 
@@ -162,7 +171,9 @@ private fun ExpandedDemoLayout(
             verticalScale = state.mapVerticalScale,
             centerLatitude = state.mapCenterLatitude,
             centerLongitude = state.mapCenterLongitude,
+            rotationAngle = state.mapRotationAngle,
             bordersScaleWithZoom = state.mapBordersScaleWithZoom,
+            onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -215,7 +226,9 @@ private fun CompactDemoLayout(
             verticalScale = state.mapVerticalScale,
             centerLatitude = state.mapCenterLatitude,
             centerLongitude = state.mapCenterLongitude,
+            rotationAngle = state.mapRotationAngle,
             bordersScaleWithZoom = state.mapBordersScaleWithZoom,
+            onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
         )
     }
 }

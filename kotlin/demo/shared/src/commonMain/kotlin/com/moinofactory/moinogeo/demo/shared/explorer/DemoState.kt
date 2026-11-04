@@ -16,6 +16,7 @@ internal data class DemoState(
     val selectedViewMode: FlagViewMode = FlagViewMode.LIST,
 
     val isSettingsOpen: Boolean = false,
+    val isMapSettingsOpen: Boolean = false,
     val inspectedCountry: Country? = null,
 
     val isSearchOpen: Boolean = false,
@@ -24,9 +25,10 @@ internal data class DemoState(
     val isSearching: Boolean = false,
     val selectedPlace: GeoPlace? = null,
 
-    /** Independent Y stretch for [com.moinofactory.moinogeo.maps.plane.PlaneMap]. */
+    /** Settings for [com.moinofactory.moinogeo.maps.plane.PlaneMap]. */
     val mapVerticalScale: Float = 1f,
     val mapCenterLatitude: Float = 0f,
     val mapCenterLongitude: Float = 0f,
+    val mapRotationAngle: Float = 0f,
     val mapBordersScaleWithZoom: Boolean = true,
 )

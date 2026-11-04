@@ -74,6 +74,8 @@ internal class DemoViewModel(
 
             DemoAction.OpenSettings -> _state.update { it.copy(isSettingsOpen = true) }
             DemoAction.CloseSettings -> _state.update { it.copy(isSettingsOpen = false) }
+            DemoAction.OpenMapSettings -> _state.update { it.copy(isMapSettingsOpen = true) }
+            DemoAction.CloseMapSettings -> _state.update { it.copy(isMapSettingsOpen = false) }
             is DemoAction.SelectFlagLibrary -> onSelectFlagLibrary(action.library)
             is DemoAction.SelectViewMode -> _state.update { it.copy(selectedViewMode = action.mode) }
 
@@ -85,6 +87,9 @@ internal class DemoViewModel(
             }
             is DemoAction.SetMapCenterLongitude -> _state.update {
                 it.copy(mapCenterLongitude = action.longitude.coerceIn(-180f, 180f))
+            }
+            is DemoAction.SetMapRotationAngle -> _state.update {
+                it.copy(mapRotationAngle = action.angle.coerceIn(-180f, 180f))
             }
             is DemoAction.SetMapBordersScaleWithZoom -> _state.update {
                 it.copy(mapBordersScaleWithZoom = action.scaleWithZoom)

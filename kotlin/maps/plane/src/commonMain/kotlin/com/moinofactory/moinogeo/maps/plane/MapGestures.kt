@@ -25,9 +25,12 @@ internal fun Modifier.mapGestures(
 ): Modifier =
     this
         .pointerInput(state) {
-            detectTransformGestures { centroid, pan, zoomFactor, _ ->
+            detectTransformGestures { centroid, pan, zoomFactor, rotation ->
                 if (zoomFactor != 1f) {
                     state.zoomAt(centroid.x, centroid.y, zoomFactor)
+                }
+                if (rotation != 0f) {
+                    state.rotationAngle += rotation
                 }
                 if (pan != Offset.Zero) {
                     state.panBy(pan.x, pan.y)

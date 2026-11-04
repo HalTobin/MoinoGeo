@@ -43,10 +43,24 @@ class MapProjectionTest {
         val pivoted = projection.copy(verticalScale = 2f, centerLatitude = 45.0)
         val pivot = pivoted.toOffsetOnTile(GeoPoint(45.0, 0.0), tileX = 0)
         val equator = pivoted.toOffsetOnTile(GeoPoint(0.0, 0.0), tileX = 0)
-        assertEquals(45f, pivot.y, absoluteTolerance = 0.01f)
-        assertEquals(135f, equator.y, absoluteTolerance = 0.01f)
+        assertEquals(90f, pivot.y, absoluteTolerance = 0.01f)
+        assertEquals(180f, equator.y, absoluteTolerance = 0.01f)
         val back = pivoted.toGeoPoint(equator)
         assertEquals(0.0, back.latitude, absoluteTolerance = 1e-4)
+    }
+
+    @Test
+    fun roundTripsWithRotation() {
+        val proj = projection.copy(
+            rotationAngle = 45f,
+            centerLatitude = -90.0,
+            verticalScale = 1.2f,
+        )
+        val original = GeoPoint(latitude = -75.0, longitude = 45.0)
+        val offset = proj.toOffset(original)
+        val back = proj.toGeoPoint(offset)
+        assertEquals(original.latitude, back.latitude, absoluteTolerance = 1e-4)
+        assertEquals(original.longitude, back.longitude, absoluteTolerance = 1e-4)
     }
 
     @Test

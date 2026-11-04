@@ -130,10 +130,20 @@ class PlaneMapStateTest {
         val proj = state.projection()
         val pivot = proj.toOffsetOnTile(GeoPoint(45.0, 0.0), tileX = 0)
         val equator = proj.toOffsetOnTile(GeoPoint(0.0, 0.0), tileX = 0)
-        // Pivot latitude stays at its equirectangular screen Y (45° → mapY=45)
-        assertEquals(45f, pivot.y, absoluteTolerance = 0.01f)
-        // Equator is 45° of latitude south of the pivot; with scale 2 that gap doubles
-        assertEquals(45f + 45f * 2f, equator.y, absoluteTolerance = 0.01f)
+        // Pivot latitude stays at viewport screen center (90f)
+        assertEquals(90f, pivot.y, absoluteTolerance = 0.01f)
+        // Equator is 45° of latitude south of the pivot; with scale 2 that gap doubles (90 + 90 = 180)
+        assertEquals(180f, equator.y, absoluteTolerance = 0.01f)
+    }
+
+    @Test
+    fun rotationAnglePertainsToState() {
+        val state = PlaneMapState(initialRotationAngle = 90f)
+        state.viewportSize = Size(360f, 180f)
+        assertEquals(90f, state.rotationAngle)
+        assertEquals(90f, state.projection().rotationAngle)
+        state.reset()
+        assertEquals(0f, state.rotationAngle)
     }
 
     @Test

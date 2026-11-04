@@ -15,6 +15,9 @@ import com.moinofactory.moinogeo.maps.core.GeoPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 class PlaneMapState(
     initialZoom: Float = 1.0f,
@@ -22,6 +25,7 @@ class PlaneMapState(
     initialOffsetY: Float = 0f,
     initialVerticalScale: Float = 1f,
     initialCenterLatitude: Double = 0.0,
+    initialRotationAngle: Float = 0f,
     // 1f = full world width visible; below that we'd need overlapping tiles (EvenOdd artifacts).
     val minZoom: Float = 1.0f,
     val maxZoom: Float = 12.0f,
@@ -29,6 +33,7 @@ class PlaneMapState(
     var zoom by mutableFloatStateOf(initialZoom.coerceIn(minZoom, maxZoom))
     var offsetX by mutableFloatStateOf(initialOffsetX)
     var offsetY by mutableFloatStateOf(initialOffsetY)
+    var rotationAngle by mutableFloatStateOf(initialRotationAngle)
 
     private var _verticalScale by mutableFloatStateOf(
         initialVerticalScale.coerceAtLeast(MapProjection.MinVerticalScale),
@@ -143,18 +148,15 @@ class PlaneMapState(
         if (width <= 0f || height <= 0f) return
 
         val cx = width / 2f
-        val cy = height / 2f
         val mapX = MapProjection.longitudeToMapX(point.longitude, width)
         val mapY = MapProjection.latitudeToMapY(point.latitude, height)
         val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
         val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
 
         offsetX = cx - mapX
-        // screenY(cy) ⇒ offsetY = cy - pivot - (mapY - pivot) * verticalScale
-        var desiredOffsetY = cy - pivot - (mapY - pivot) * scale
+        var desiredOffsetY = -(mapY - pivot) * scale
         ensureVerticalRoomForOffset(desiredOffsetY)
-        // Recompute after possible zoom bump (scale unchanged).
-        desiredOffsetY = cy - pivot - (mapY - pivot) * scale
+        desiredOffsetY = -(mapY - pivot) * scale
         offsetY = desiredOffsetY
         normalizeHorizontalOffset()
         clampVerticalOffset()
@@ -189,6 +191,7 @@ class PlaneMapState(
         offsetY = 0f
         verticalScale = 1f
         centerLatitude = 0.0
+        rotationAngle = 0f
         doubleTapZoomedIn = false
         doubleTapBaselineZoom = 1.0f
     }
@@ -269,8 +272,20 @@ class PlaneMapState(
         val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
         val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
 
-        offsetX = (screenX - cx) / zoom - mapX + cx
-        offsetY = (screenY - cy) / zoom - (pivot - cy) - (mapY - pivot) * scale
+        var sX = screenX
+        var sY = screenY
+        if (rotationAngle != 0f) {
+            val rad = rotationAngle * (PI / 180.0).toFloat()
+            val cosR = cos(rad)
+            val sinR = sin(rad)
+            val dx = screenX - cx
+            val dy = screenY - cy
+            sX = cx + dx * cosR + dy * sinR
+            sY = cy - dx * sinR + dy * cosR
+        }
+
+        offsetX = (sX - cx) / zoom - mapX + cx
+        offsetY = (sY - cy - (mapY - pivot) * zoom * scale) / zoom
     }
 
     private fun cancelZoomAnimation() {
@@ -303,6 +318,7 @@ class PlaneMapState(
             offsetY = offsetY,
             verticalScale = verticalScale,
             centerLatitude = centerLatitude,
+            rotationAngle = rotationAngle,
         )
 
     private companion object {
@@ -318,6 +334,7 @@ fun rememberPlaneMapState(
     initialOffsetY: Float = 0f,
     initialVerticalScale: Float = 1f,
     initialCenterLatitude: Double = 0.0,
+    initialRotationAngle: Float = 0f,
     minZoom: Float = 1.0f,
     maxZoom: Float = 12.0f,
 ): PlaneMapState {
@@ -328,6 +345,7 @@ fun rememberPlaneMapState(
             initialOffsetY = initialOffsetY,
             initialVerticalScale = initialVerticalScale,
             initialCenterLatitude = initialCenterLatitude,
+            initialRotationAngle = initialRotationAngle,
             minZoom = minZoom,
             maxZoom = maxZoom,
         )
