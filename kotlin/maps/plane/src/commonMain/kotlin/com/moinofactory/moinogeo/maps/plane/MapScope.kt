@@ -25,7 +25,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
@@ -41,8 +44,8 @@ import kotlin.math.roundToInt
 annotation class MapScopeMarker
 
 /**
- * Receiver scope for [PlaneMap] content. Overlay APIs take **geographic**
- * coordinates; the map projects them into the current viewport.
+ * Receiver scope for [PlaneMap] and [AzimuthalMap] content. Overlay APIs take
+ * **geographic** coordinates; the map projects them into the current viewport.
  */
 @MapScopeMarker
 interface MapScope {
@@ -115,7 +118,9 @@ fun MapScope.Area(
     )
 }
 
-internal val LocalMapProjection = compositionLocalOf { MapProjection.Empty }
+internal val LocalMapProjection = compositionLocalOf<MapViewport> {
+    MapProjection.Empty.viewport()
+}
 
 @Immutable
 internal object MarkerScopeInstance : MarkerScope
@@ -167,7 +172,7 @@ internal object MapScopeInstance : MapScope {
         val radiusPx = proj.metersToPixels(radiusMeters, center.latitude)
         Canvas(modifier = Modifier.fillMaxSize()) {
             if (radiusPx <= 0f) return@Canvas
-            for (tx in MapProjection.HorizontalWrapTiles) {
+            for (tx in proj.wrapTiles) {
                 val screenCenter = proj.toOffsetOnTile(center, tx)
                 if (fillColor.alpha > 0f) {
                     drawCircle(color = fillColor, radius = radiusPx, center = screenCenter)
@@ -206,22 +211,16 @@ internal object MapScopeInstance : MapScope {
                     onTap = { onClick?.invoke() },
                 ),
         ) {
-            for (tx in MapProjection.HorizontalWrapTiles) {
-                val band = proj.clipRectForTile(tx)
-                clipRect(
-                    left = band.left,
-                    top = band.top,
-                    right = band.right,
-                    bottom = band.bottom,
-                ) {
+            for (tx in proj.wrapTiles) {
+                clipToViewport(proj, tx) {
                     for (polygon in geometries) {
                         if (fillColor.alpha > 0f) {
-                            polygon.toPath(proj, tx)?.let { fill ->
+                            proj.fillPath(polygon, tx)?.let { fill ->
                                 drawPath(path = fill, color = fillColor)
                             }
                         }
                         if (borderWidth > 0f && borderColor.alpha > 0f) {
-                            polygon.toBorderPath(proj, tx)?.let { stroke ->
+                            proj.borderPath(polygon, tx)?.let { stroke ->
                                 drawPath(
                                     path = stroke,
                                     color = borderColor,
@@ -305,5 +304,41 @@ internal fun ProvideMapProjection(
     projection: MapProjection,
     content: @Composable () -> Unit,
 ) {
-    CompositionLocalProvider(LocalMapProjection provides projection, content = content)
+    ProvideMapViewport(projection.viewport(), content)
+}
+
+@Composable
+internal fun ProvideMapProjection(
+    projection: AzimuthalProjection,
+    content: @Composable () -> Unit,
+) {
+    ProvideMapViewport(projection.viewport(), content)
+}
+
+@Composable
+private fun ProvideMapViewport(
+    viewport: MapViewport,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(LocalMapProjection provides viewport, content = content)
+}
+
+private inline fun DrawScope.clipToViewport(
+    viewport: MapViewport,
+    tileX: Int,
+    crossinline block: DrawScope.() -> Unit,
+) {
+    val shape: Path? = viewport.shapeClipPath()
+    if (shape != null) {
+        clipPath(shape, block = block)
+    } else {
+        val band = viewport.clipRectForTile(tileX)
+        clipRect(
+            left = band.left,
+            top = band.top,
+            right = band.right,
+            bottom = band.bottom,
+            block = block,
+        )
+    }
 }

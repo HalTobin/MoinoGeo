@@ -25,10 +25,27 @@ internal data class DemoState(
     val isSearching: Boolean = false,
     val selectedPlace: GeoPlace? = null,
 
-    /** Settings for [com.moinofactory.moinogeo.maps.plane.PlaneMap]. */
-    val mapVerticalScale: Float = 1f,
-    val mapCenterLatitude: Float = 0f,
-    val mapCenterLongitude: Float = 0f,
-    val mapRotationAngle: Float = 0f,
-    val mapBordersScaleWithZoom: Boolean = true,
+    val mapMode: DemoMapMode = DemoMapMode.Flat,
+    val flatMapSettings: DemoMapSettings = DemoMapSettings(),
+    val azimuthalMapSettings: DemoMapSettings = DemoMapSettings(),
+) {
+    val activeMapSettings: DemoMapSettings
+        get() = when (mapMode) {
+            DemoMapMode.Flat -> flatMapSettings
+            DemoMapMode.Azimuthal -> azimuthalMapSettings
+        }
+}
+
+internal enum class DemoMapMode(val title: String) {
+    Flat("Flat"),
+    Azimuthal("Azimuthal"),
+}
+
+/** Camera and style controls for one map mode. */
+internal data class DemoMapSettings(
+    val verticalScale: Float = 1f,
+    val centerLatitude: Float = 0f,
+    val centerLongitude: Float = 0f,
+    val rotationAngle: Float = 0f,
+    val bordersScaleWithZoom: Boolean = true,
 )

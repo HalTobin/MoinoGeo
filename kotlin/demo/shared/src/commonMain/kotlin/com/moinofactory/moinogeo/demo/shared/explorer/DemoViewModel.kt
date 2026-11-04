@@ -79,24 +79,36 @@ internal class DemoViewModel(
             is DemoAction.SelectFlagLibrary -> onSelectFlagLibrary(action.library)
             is DemoAction.SelectViewMode -> _state.update { it.copy(selectedViewMode = action.mode) }
 
-            is DemoAction.SetMapVerticalScale -> _state.update {
-                it.copy(mapVerticalScale = action.scale.coerceIn(0.5f, 2.5f))
+            is DemoAction.SelectMapMode -> _state.update { it.copy(mapMode = action.mode) }
+            DemoAction.ResetActiveMapSettings -> updateActiveMap { DemoMapSettings() }
+            is DemoAction.SetMapVerticalScale -> updateActiveMap {
+                it.copy(verticalScale = action.scale.coerceIn(0.5f, 2.5f))
             }
-            is DemoAction.SetMapCenterLatitude -> _state.update {
-                it.copy(mapCenterLatitude = action.latitude.coerceIn(-90f, 90f))
+            is DemoAction.SetMapCenterLatitude -> updateActiveMap {
+                it.copy(centerLatitude = action.latitude.coerceIn(-90f, 90f))
             }
-            is DemoAction.SetMapCenterLongitude -> _state.update {
-                it.copy(mapCenterLongitude = action.longitude.coerceIn(-180f, 180f))
+            is DemoAction.SetMapCenterLongitude -> updateActiveMap {
+                it.copy(centerLongitude = action.longitude.coerceIn(-180f, 180f))
             }
-            is DemoAction.SetMapRotationAngle -> _state.update {
-                it.copy(mapRotationAngle = action.angle.coerceIn(-180f, 180f))
+            is DemoAction.SetMapRotationAngle -> updateActiveMap {
+                it.copy(rotationAngle = action.angle.coerceIn(-180f, 180f))
             }
-            is DemoAction.SetMapBordersScaleWithZoom -> _state.update {
-                it.copy(mapBordersScaleWithZoom = action.scaleWithZoom)
+            is DemoAction.SetMapBordersScaleWithZoom -> updateActiveMap {
+                it.copy(bordersScaleWithZoom = action.scaleWithZoom)
             }
 
             is DemoAction.InspectCountry -> _state.update { it.copy(inspectedCountry = action.country) }
             DemoAction.DismissCountryDetail -> _state.update { it.copy(inspectedCountry = null) }
+        }
+    }
+
+    private fun updateActiveMap(transform: (DemoMapSettings) -> DemoMapSettings) {
+        _state.update { state ->
+            val updated = transform(state.activeMapSettings)
+            when (state.mapMode) {
+                DemoMapMode.Flat -> state.copy(flatMapSettings = updated)
+                DemoMapMode.Azimuthal -> state.copy(azimuthalMapSettings = updated)
+            }
         }
     }
 

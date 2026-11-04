@@ -18,8 +18,16 @@ private const val WheelZoomFactor = 1.12f
  * zoom toggle, and optional single-tap [onMapClick] — all focused on the
  * pointer / gesture centroid.
  */
+internal interface MapCamera {
+    var rotationAngle: Float
+    fun zoomAt(focalX: Float, focalY: Float, factor: Float)
+    fun panBy(deltaX: Float, deltaY: Float)
+    fun geoAt(screen: Offset): GeoPoint
+    suspend fun animateDoubleTapZoom(focalX: Float, focalY: Float)
+}
+
 internal fun Modifier.mapGestures(
-    state: PlaneMapState,
+    state: MapCamera,
     scope: CoroutineScope,
     onMapClick: ((GeoPoint) -> Unit)? = null,
 ): Modifier =
@@ -41,7 +49,7 @@ internal fun Modifier.mapGestures(
             detectTapGestures(
                 onTap = onMapClick?.let { callback ->
                     { pos ->
-                        callback(state.projection().toGeoPoint(pos))
+                        callback(state.geoAt(pos))
                     }
                 },
                 onDoubleTap = { pos ->

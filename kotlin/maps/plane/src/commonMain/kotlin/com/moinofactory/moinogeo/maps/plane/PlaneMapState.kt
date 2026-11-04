@@ -29,11 +29,11 @@ class PlaneMapState(
     // 1f = full world width visible; below that we'd need overlapping tiles (EvenOdd artifacts).
     val minZoom: Float = 1.0f,
     val maxZoom: Float = 12.0f,
-) {
+) : MapCamera {
     var zoom by mutableFloatStateOf(initialZoom.coerceIn(minZoom, maxZoom))
     var offsetX by mutableFloatStateOf(initialOffsetX)
     var offsetY by mutableFloatStateOf(initialOffsetY)
-    var rotationAngle by mutableFloatStateOf(initialRotationAngle)
+    override var rotationAngle by mutableFloatStateOf(initialRotationAngle)
 
     private var _verticalScale by mutableFloatStateOf(
         initialVerticalScale.coerceAtLeast(MapProjection.MinVerticalScale),
@@ -113,14 +113,14 @@ class PlaneMapState(
      * Zoom by [factor] keeping the geographic point under ([focalX], [focalY])
      * (viewport pixels) fixed on screen.
      */
-    fun zoomAt(focalX: Float, focalY: Float, factor: Float) {
+    override fun zoomAt(focalX: Float, focalY: Float, factor: Float) {
         cancelZoomAnimation()
         applyZoomAt(focalX, focalY, factor)
         doubleTapZoomedIn = false
     }
 
     /** Pan in screen pixels (converted to map space). */
-    fun panBy(deltaX: Float, deltaY: Float) {
+    override fun panBy(deltaX: Float, deltaY: Float) {
         if (zoom == 0f) return
         // offsetY is scaled by [zoom] in the projection (pivot frame), not zoomY.
         offsetX += deltaX / zoom
@@ -200,7 +200,7 @@ class PlaneMapState(
      * Animated double-tap: first tap zooms in toward the point, second returns
      * to the zoom level from before the zoom-in.
      */
-    suspend fun animateDoubleTapZoom(focalX: Float, focalY: Float) {
+    override suspend fun animateDoubleTapZoom(focalX: Float, focalY: Float) {
         coroutineScope {
             zoomAnimationJob?.cancel()
             val job = launch {
@@ -309,6 +309,8 @@ class PlaneMapState(
         )
         offsetY = offsetY.coerceIn(bounds.start, bounds.endInclusive)
     }
+
+    override fun geoAt(screen: Offset): GeoPoint = projection().toGeoPoint(screen)
 
     internal fun projection(): MapProjection =
         MapProjection(

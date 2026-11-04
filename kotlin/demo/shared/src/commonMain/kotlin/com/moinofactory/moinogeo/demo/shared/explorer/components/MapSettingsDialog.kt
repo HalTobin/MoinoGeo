@@ -19,56 +19,62 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapMode
+import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapSettings
 import kotlin.math.roundToInt
 
 @Composable
 internal fun MapSettingsDialog(
-    mapVerticalScale: Float,
-    mapCenterLatitude: Float,
-    mapCenterLongitude: Float,
-    mapRotationAngle: Float,
-    mapBordersScaleWithZoom: Boolean,
+    mode: DemoMapMode,
+    settings: DemoMapSettings,
     onMapVerticalScaleChange: (Float) -> Unit,
     onMapCenterLatitudeChange: (Float) -> Unit,
     onMapCenterLongitudeChange: (Float) -> Unit,
     onMapRotationAngleChange: (Float) -> Unit,
     onMapBordersScaleWithZoomChange: (Boolean) -> Unit,
+    onReset: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Map Settings") },
+        title = { Text("${mode.title} map") },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
             ) {
+                Text(
+                    text = "These controls apply only to the ${mode.title} map.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 MapSliderRow(
                     label = "Vertical stretch",
-                    valueLabel = "${(mapVerticalScale * 100).roundToInt() / 100.0}×",
-                    value = mapVerticalScale,
+                    valueLabel = "${(settings.verticalScale * 100).roundToInt() / 100.0}×",
+                    value = settings.verticalScale,
                     valueRange = 0.5f..2.5f,
                     onValueChange = onMapVerticalScaleChange,
                 )
                 MapSliderRow(
                     label = "Center latitude",
-                    valueLabel = "${(mapCenterLatitude * 10).roundToInt() / 10.0}°",
-                    value = mapCenterLatitude,
+                    valueLabel = "${(settings.centerLatitude * 10).roundToInt() / 10.0}°",
+                    value = settings.centerLatitude,
                     valueRange = -90f..90f,
                     onValueChange = onMapCenterLatitudeChange,
                 )
                 MapSliderRow(
                     label = "Center longitude",
-                    valueLabel = "${(mapCenterLongitude * 10).roundToInt() / 10.0}°",
-                    value = mapCenterLongitude,
+                    valueLabel = "${(settings.centerLongitude * 10).roundToInt() / 10.0}°",
+                    value = settings.centerLongitude,
                     valueRange = -180f..180f,
                     onValueChange = onMapCenterLongitudeChange,
                 )
                 MapSliderRow(
                     label = "Rotation angle",
-                    valueLabel = "${mapRotationAngle.roundToInt()}°",
-                    value = mapRotationAngle,
+                    valueLabel = "${settings.rotationAngle.roundToInt()}°",
+                    value = settings.rotationAngle,
                     valueRange = -180f..180f,
                     onValueChange = onMapRotationAngleChange,
                 )
@@ -87,10 +93,15 @@ internal fun MapSettingsDialog(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Switch(
-                        checked = mapBordersScaleWithZoom,
+                        checked = settings.bordersScaleWithZoom,
                         onCheckedChange = onMapBordersScaleWithZoomChange,
                     )
                 }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onReset) {
+                Text("Default")
             }
         },
         confirmButton = {

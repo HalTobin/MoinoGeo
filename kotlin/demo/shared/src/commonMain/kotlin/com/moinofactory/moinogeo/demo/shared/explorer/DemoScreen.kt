@@ -133,11 +133,8 @@ internal fun DemoScreenContent(
 
     if (state.isMapSettingsOpen) {
         MapSettingsDialog(
-            mapVerticalScale = state.mapVerticalScale,
-            mapCenterLatitude = state.mapCenterLatitude,
-            mapCenterLongitude = state.mapCenterLongitude,
-            mapRotationAngle = state.mapRotationAngle,
-            mapBordersScaleWithZoom = state.mapBordersScaleWithZoom,
+            mode = state.mapMode,
+            settings = state.activeMapSettings,
             onMapVerticalScaleChange = { onAction(DemoAction.SetMapVerticalScale(it)) },
             onMapCenterLatitudeChange = { onAction(DemoAction.SetMapCenterLatitude(it)) },
             onMapCenterLongitudeChange = { onAction(DemoAction.SetMapCenterLongitude(it)) },
@@ -145,6 +142,7 @@ internal fun DemoScreenContent(
             onMapBordersScaleWithZoomChange = {
                 onAction(DemoAction.SetMapBordersScaleWithZoom(it))
             },
+            onReset = { onAction(DemoAction.ResetActiveMapSettings) },
             onDismiss = { onAction(DemoAction.CloseMapSettings) },
         )
     }
@@ -168,11 +166,10 @@ private fun ExpandedDemoLayout(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            verticalScale = state.mapVerticalScale,
-            centerLatitude = state.mapCenterLatitude,
-            centerLongitude = state.mapCenterLongitude,
-            rotationAngle = state.mapRotationAngle,
-            bordersScaleWithZoom = state.mapBordersScaleWithZoom,
+            mode = state.mapMode,
+            flatSettings = state.flatMapSettings,
+            azimuthalSettings = state.azimuthalMapSettings,
+            onSelectMode = { onAction(DemoAction.SelectMapMode(it)) },
             onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
         )
 
@@ -223,11 +220,10 @@ private fun CompactDemoLayout(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            verticalScale = state.mapVerticalScale,
-            centerLatitude = state.mapCenterLatitude,
-            centerLongitude = state.mapCenterLongitude,
-            rotationAngle = state.mapRotationAngle,
-            bordersScaleWithZoom = state.mapBordersScaleWithZoom,
+            mode = state.mapMode,
+            flatSettings = state.flatMapSettings,
+            azimuthalSettings = state.azimuthalMapSettings,
+            onSelectMode = { onAction(DemoAction.SelectMapMode(it)) },
             onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
         )
     }
