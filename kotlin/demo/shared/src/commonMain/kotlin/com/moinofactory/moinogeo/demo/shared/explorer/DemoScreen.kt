@@ -159,7 +159,7 @@ internal fun DemoScreenContent(
             onMapCenterLatitudeChange = { onAction(DemoAction.SetMapCenterLatitude(it)) },
             onMapCenterLongitudeChange = { onAction(DemoAction.SetMapCenterLongitude(it)) },
             onMapRotationAngleChange = { onAction(DemoAction.SetMapRotationAngle(it)) },
-            onReset = { onAction(DemoAction.ResetActiveMapSettings) },
+            onApplyPreset = { onAction(DemoAction.ApplyMapSettingsPreset(it)) },
             onDismiss = { onAction(DemoAction.CloseMapSettings) },
         )
     }

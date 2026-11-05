@@ -82,7 +82,7 @@ internal class DemoViewModel(
             is DemoAction.SelectViewMode -> _state.update { it.copy(selectedViewMode = action.mode) }
 
             is DemoAction.SelectMapMode -> _state.update { it.copy(mapMode = action.mode) }
-            DemoAction.ResetActiveMapSettings -> updateActiveMap { DemoMapSettings() }
+            is DemoAction.ApplyMapSettingsPreset -> updateActiveMap { action.settings }
             is DemoAction.SetMapHorizontalScale -> updateActiveMap {
                 it.copy(horizontalScale = action.scale.coerceIn(0.5f, 2.5f))
             }

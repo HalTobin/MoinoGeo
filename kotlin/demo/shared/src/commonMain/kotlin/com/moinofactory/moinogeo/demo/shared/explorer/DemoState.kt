@@ -31,9 +31,9 @@ internal data class DemoState(
     val selectedPlace: GeoPlace? = null,
 
     val mapMode: DemoMapMode = DemoMapMode.Flat,
-    val flatMapSettings: DemoMapSettings = DemoMapSettings(),
-    val azimuthalMapSettings: DemoMapSettings = DemoMapSettings(),
-    val sphereMapSettings: DemoMapSettings = DemoMapSettings(),
+    val flatMapSettings: DemoMapSettings = DemoMapSettings.Standard,
+    val azimuthalMapSettings: DemoMapSettings = DemoMapSettings.Linear,
+    val sphereMapSettings: DemoMapSettings = DemoMapSettings.Linear,
     val mapStyleSettings: DemoMapStyleSettings = DemoMapStyleSettings(),
 ) {
     val activeMapSettings: DemoMapSettings
@@ -81,12 +81,24 @@ internal data class DemoMapSettings(
         return (baseAspectRatio * horizontal / vertical).coerceIn(MinAspectRatio, MaxAspectRatio)
     }
 
-    private companion object {
-        const val MinStretch = 0.5f
-        const val MinAspectRatio = 0.35f
-        const val MaxAspectRatio = 4f
-        const val MinProjectionScale = 0.2f
-        const val MaxProjectionScale = 5f
+    companion object {
+        /** Neutral equirectangular: uniform 1× scale, no falloff. */
+        val Linear = DemoMapSettings()
+
+        /**
+         * Cartographic flat look: slight vertical stretch plus polar falloff,
+         * closer to common printed/web world maps.
+         */
+        val Standard = DemoMapSettings(
+            verticalScale = 1.6f,
+            verticalWarp = 1.9f,
+        )
+
+        private const val MinStretch = 0.5f
+        private const val MinAspectRatio = 0.35f
+        private const val MaxAspectRatio = 4f
+        private const val MinProjectionScale = 0.2f
+        private const val MaxProjectionScale = 5f
     }
 }
 

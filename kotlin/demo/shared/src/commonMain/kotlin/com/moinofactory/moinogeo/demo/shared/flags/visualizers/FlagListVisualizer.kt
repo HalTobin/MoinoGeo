@@ -1,6 +1,5 @@
 package com.moinofactory.moinogeo.demo.shared.flags.visualizers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,9 +40,8 @@ internal fun FlagListVisualizer(
     ) {
         items(countries) { country ->
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCountryClick(country) },
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { onCountryClick(country) }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

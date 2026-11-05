@@ -32,7 +32,7 @@ internal fun MapSettingsDialog(
     onMapCenterLatitudeChange: (Float) -> Unit,
     onMapCenterLongitudeChange: (Float) -> Unit,
     onMapRotationAngleChange: (Float) -> Unit,
-    onReset: () -> Unit,
+    onApplyPreset: (DemoMapSettings) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val isFlat = mode == DemoMapMode.Flat
@@ -50,7 +50,7 @@ internal fun MapSettingsDialog(
                         "These controls apply only to the Flat map. " +
                             "Uniform stretch changes aspect; vertical falloff " +
                             "stretches exponentially away from the equator " +
-                            "(0 = linear)."
+                            "(0 = linear). Standard matches common world-map rendering."
                     } else {
                         "These controls apply only to the ${mode.title} map. " +
                             "Horizontal and vertical stretch distort the projection " +
@@ -118,8 +118,19 @@ internal fun MapSettingsDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onReset) {
-                Text("Default")
+            if (isFlat) {
+                Row(horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { onApplyPreset(DemoMapSettings.Linear) }) {
+                        Text("Linear")
+                    }
+                    TextButton(onClick = { onApplyPreset(DemoMapSettings.Standard) }) {
+                        Text("Standard")
+                    }
+                }
+            } else {
+                TextButton(onClick = { onApplyPreset(DemoMapSettings.Linear) }) {
+                    Text("Default")
+                }
             }
         },
         confirmButton = {

@@ -28,7 +28,7 @@ internal sealed class DemoAction {
     data class SelectViewMode(val mode: FlagViewMode) : DemoAction()
 
     data class SelectMapMode(val mode: DemoMapMode) : DemoAction()
-    data object ResetActiveMapSettings : DemoAction()
+    data class ApplyMapSettingsPreset(val settings: DemoMapSettings) : DemoAction()
     data class SetMapHorizontalScale(val scale: Float) : DemoAction()
     data class SetMapVerticalScale(val scale: Float) : DemoAction()
     data class SetMapVerticalWarp(val warp: Float) : DemoAction()
