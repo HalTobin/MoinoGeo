@@ -1,10 +1,13 @@
 package com.moinofactory.moinogeo.demo.shared.explorer
 
+import androidx.compose.ui.graphics.Color
 import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
 import com.moinofactory.moinogeo.maps.core.MapStyle
+import com.moinofactory.moinogeo.maps.core.TopoZone
+import com.moinofactory.moinogeo.maps.core.ZoneStyle
 
 /**
  * Immutable UI state for [DemoScreen].
@@ -79,12 +82,14 @@ internal data class DemoMapStyleSettings(
     val showBorders: Boolean = true,
     val showTopography: Boolean = true,
     val bordersScaleWithZoom: Boolean = true,
+    val zoneColors: Map<TopoZone, Color> = defaultZoneColors(),
 ) {
     fun toMapStyle(): MapStyle {
         val base = preset.style
         return base.copy(
             showBorders = showBorders,
             showTopography = showTopography,
+            zoneStyles = zoneColors.mapValues { (_, color) -> ZoneStyle(fillColor = color) },
             borderStyle = base.borderStyle.copy(
                 lineWidth = 1f,
                 scaleWithZoom = bordersScaleWithZoom,
@@ -92,6 +97,13 @@ internal data class DemoMapStyleSettings(
         )
     }
 }
+
+internal fun defaultZoneColors(
+    style: MapStyle = MapStyle.Default,
+): Map<TopoZone, Color> = style.zoneStyles.mapValues { it.value.fillColor }
+
+internal fun TopoZone.displayName(): String =
+    name.lowercase().replaceFirstChar { it.titlecase() }
 
 internal enum class DemoMapStylePreset(val title: String, val style: MapStyle) {
     Default("Default", MapStyle.Default),

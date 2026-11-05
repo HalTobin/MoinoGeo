@@ -141,6 +141,9 @@ internal fun DemoScreenContent(
             onBordersScaleWithZoomChange = {
                 onAction(DemoAction.SetMapBordersScaleWithZoom(it))
             },
+            onZoneColorChange = { zone, color ->
+                onAction(DemoAction.SetMapZoneColor(zone, color))
+            },
             onReset = { onAction(DemoAction.ResetMapStyleSettings) },
             onDismiss = { onAction(DemoAction.CloseMapStyleSettings) },
         )

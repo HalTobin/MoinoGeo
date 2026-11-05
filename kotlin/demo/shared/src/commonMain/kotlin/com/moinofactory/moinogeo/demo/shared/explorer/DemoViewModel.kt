@@ -103,7 +103,10 @@ internal class DemoViewModel(
                 it.copy(mapStyleSettings = DemoMapStyleSettings())
             }
             is DemoAction.SelectMapStylePreset -> updateMapStyle {
-                it.copy(preset = action.preset)
+                it.copy(
+                    preset = action.preset,
+                    zoneColors = defaultZoneColors(action.preset.style),
+                )
             }
             is DemoAction.SetMapShowBorders -> updateMapStyle {
                 it.copy(showBorders = action.show)
@@ -113,6 +116,9 @@ internal class DemoViewModel(
             }
             is DemoAction.SetMapBordersScaleWithZoom -> updateMapStyle {
                 it.copy(bordersScaleWithZoom = action.scaleWithZoom)
+            }
+            is DemoAction.SetMapZoneColor -> updateMapStyle {
+                it.copy(zoneColors = it.zoneColors + (action.zone to action.color))
             }
 
             is DemoAction.InspectCountry -> _state.update { it.copy(inspectedCountry = action.country) }

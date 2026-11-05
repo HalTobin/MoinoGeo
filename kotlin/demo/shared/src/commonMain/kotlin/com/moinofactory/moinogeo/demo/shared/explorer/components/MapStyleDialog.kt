@@ -2,7 +2,6 @@ package com.moinofactory.moinogeo.demo.shared.explorer.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,11 +19,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapStylePreset
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapStyleSettings
+import com.moinofactory.moinogeo.demo.shared.explorer.displayName
+import com.moinofactory.moinogeo.maps.core.TopoZone
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun MapStyleDialog(
     settings: DemoMapStyleSettings,
@@ -32,6 +33,7 @@ internal fun MapStyleDialog(
     onShowBordersChange: (Boolean) -> Unit,
     onShowTopographyChange: (Boolean) -> Unit,
     onBordersScaleWithZoomChange: (Boolean) -> Unit,
+    onZoneColorChange: (TopoZone, Color) -> Unit,
     onReset: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -87,6 +89,32 @@ internal fun MapStyleDialog(
                     checked = settings.bordersScaleWithZoom,
                     onCheckedChange = onBordersScaleWithZoomChange,
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Topography colors",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Tap a zone to edit its color (HSV + hex).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    TopoZone.entries.forEach { zone ->
+                        val color = settings.zoneColors[zone] ?: Color.Gray
+                        ColorPickerRow(
+                            label = zone.displayName(),
+                            color = color,
+                            onColorChange = { onZoneColorChange(zone, it) },
+                        )
+                    }
+                }
             }
         },
         dismissButton = {

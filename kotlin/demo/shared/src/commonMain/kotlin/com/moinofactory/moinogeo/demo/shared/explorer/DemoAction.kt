@@ -1,9 +1,11 @@
 package com.moinofactory.moinogeo.demo.shared.explorer
 
+import androidx.compose.ui.graphics.Color
 import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
+import com.moinofactory.moinogeo.maps.core.TopoZone
 
 /**
  * User intents for [DemoScreen]. Handled exclusively via [DemoViewModel.onAction].
@@ -38,6 +40,7 @@ internal sealed class DemoAction {
     data class SetMapShowBorders(val show: Boolean) : DemoAction()
     data class SetMapShowTopography(val show: Boolean) : DemoAction()
     data class SetMapBordersScaleWithZoom(val scaleWithZoom: Boolean) : DemoAction()
+    data class SetMapZoneColor(val zone: TopoZone, val color: Color) : DemoAction()
 
     data class InspectCountry(val country: Country) : DemoAction()
     data object DismissCountryDetail : DemoAction()
