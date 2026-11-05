@@ -1,25 +1,30 @@
 package com.moinofactory.moinogeo.demo.shared.explorer.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,18 +36,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.core.domain.model.GeoPlaceType
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapMode
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapSettings
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapStyleSettings
 import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
+import com.moinofactory.moinogeo.demo.shared.ui.icon.azimuthalMap
+import com.moinofactory.moinogeo.demo.shared.ui.icon.flatMap
 import com.moinofactory.moinogeo.demo.shared.ui.icon.palette
 import com.moinofactory.moinogeo.demo.shared.ui.icon.settings
+import com.moinofactory.moinogeo.demo.shared.ui.icon.sphereMap
 import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
 import com.moinofactory.moinogeo.maps.core.BoundaryFeature
 import com.moinofactory.moinogeo.maps.core.GeoPoint
@@ -60,18 +72,18 @@ private val HighlightFill = Color(0x66FF6D00)
 private val HighlightBorder = Color(0xFFFF6D00)
 
 /**
- * Demo wrapper around [PlaneMap] and [AzimuthalMap] using bundled Natural Earth
- * topography and countries. Each mode keeps its own camera. The map canvas uses a
- * determined aspect ratio from [DemoMapSettings] stretch values instead of
- * stretching to fill the parent.
+ * Demo wrapper around [PlaneMap], [AzimuthalMap], and a Sphere placeholder using
+ * bundled Natural Earth topography and countries. Each mode keeps its own camera.
+ * The map canvas uses a determined aspect ratio from [DemoMapSettings] stretch
+ * values instead of stretching to fill the parent.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DemoMap(
     selectedPlace: GeoPlace?,
     mode: DemoMapMode,
     flatSettings: DemoMapSettings,
     azimuthalSettings: DemoMapSettings,
+    sphereSettings: DemoMapSettings,
     styleSettings: DemoMapStyleSettings,
     onSelectMode: (DemoMapMode) -> Unit,
     modifier: Modifier = Modifier,
@@ -109,6 +121,7 @@ internal fun DemoMap(
     val activeSettings = when (mode) {
         DemoMapMode.Flat -> flatSettings
         DemoMapMode.Azimuthal -> azimuthalSettings
+        DemoMapMode.Sphere -> sphereSettings
     }
     val mapAspectRatio = activeSettings.aspectRatio(mode.baseAspectRatio)
     val mapStyle = styleSettings.toMapStyle()
@@ -184,6 +197,11 @@ internal fun DemoMap(
                                 },
                             )
                         }
+
+                        DemoMapMode.Sphere -> SphereMapPlaceholder(
+                            modifier = Modifier.fillMaxSize(),
+                            backgroundColor = mapStyle.backgroundColor,
+                        )
                     }
 
                     if (onOpenMapStyleSettings != null) {
@@ -203,8 +221,7 @@ internal fun DemoMap(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = 8.dp)
-                            .widthIn(max = 280.dp)
-                            .padding(horizontal = 56.dp),
+                            .width(168.dp),
                     )
 
                     if (onOpenMapSettings != null) {
@@ -240,10 +257,32 @@ internal fun DemoMap(
 }
 
 @Composable
+private fun SphereMapPlaceholder(
+    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = backgroundColor,
+        ) {}
+        Text(
+            text = "3D SPHERE MAP",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
 private fun MapOverlayIconButton(
     onClick: () -> Unit,
     contentDescription: String,
-    imageVector: androidx.compose.ui.graphics.vector.ImageVector,
+    imageVector: ImageVector,
     modifier: Modifier = Modifier,
 ) {
     IconButton(
@@ -265,36 +304,97 @@ private fun MapOverlayIconButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MapModeSelector(
     selected: DemoMapMode,
     onSelect: (DemoMapMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val modes = DemoMapMode.entries
+    val selectedIndex = modes.indexOf(selected).coerceAtLeast(0)
+    val trackInset = 3.dp
+    // Gray track + white thumb keeps the indicator readable over the map.
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f)
+    val indicatorColor = MaterialTheme.colorScheme.surface
+    val selectedContentColor = MaterialTheme.colorScheme.onSurface
+    val unselectedContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f)
+
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+        modifier = modifier.height(40.dp),
+        shape = CircleShape,
+        color = trackColor,
         tonalElevation = 3.dp,
+        shadowElevation = 2.dp,
     ) {
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.padding(4.dp),
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(trackInset)
+                .selectableGroup(),
         ) {
-            DemoMapMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = selected == mode,
-                    onClick = { onSelect(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = DemoMapMode.entries.size,
-                    ),
-                    label = { Text(mode.title) },
-                )
+            val segmentWidth = (maxWidth / modes.size).coerceAtLeast(0.dp)
+            val indicatorOffset by animateDpAsState(
+                targetValue = segmentWidth * selectedIndex,
+                animationSpec = tween(
+                    durationMillis = 250,
+                    easing = FastOutSlowInEasing,
+                ),
+                label = "MapModeIndicator",
+            )
+
+            Box(
+                modifier = Modifier
+                    .zIndex(0f)
+                    .offset(x = indicatorOffset)
+                    .width(segmentWidth)
+                    .fillMaxHeight()
+                    .shadow(elevation = 2.dp, shape = CircleShape, clip = false)
+                    .clip(CircleShape)
+                    .background(indicatorColor),
+            )
+
+            Row(
+                modifier = Modifier
+                    .zIndex(1f)
+                    .fillMaxSize(),
+            ) {
+                modes.forEach { mode ->
+                    val isSelected = selected == mode
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(CircleShape)
+                            .selectable(
+                                selected = isSelected,
+                                onClick = { onSelect(mode) },
+                                role = Role.RadioButton,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = mode.icon,
+                            contentDescription = mode.title,
+                            modifier = Modifier.size(22.dp),
+                            tint = if (isSelected) {
+                                selectedContentColor
+                            } else {
+                                unselectedContentColor
+                            },
+                        )
+                    }
+                }
             }
         }
     }
 }
+
+private val DemoMapMode.icon: ImageVector
+    get() = when (this) {
+        DemoMapMode.Flat -> Icons.flatMap
+        DemoMapMode.Azimuthal -> Icons.azimuthalMap
+        DemoMapMode.Sphere -> Icons.sphereMap
+    }
 
 @Composable
 private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {

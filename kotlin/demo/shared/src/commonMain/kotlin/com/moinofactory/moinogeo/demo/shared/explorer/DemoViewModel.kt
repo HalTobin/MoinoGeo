@@ -126,6 +126,7 @@ internal class DemoViewModel(
             when (state.mapMode) {
                 DemoMapMode.Flat -> state.copy(flatMapSettings = updated)
                 DemoMapMode.Azimuthal -> state.copy(azimuthalMapSettings = updated)
+                DemoMapMode.Sphere -> state.copy(sphereMapSettings = updated)
             }
         }
     }

@@ -30,12 +30,14 @@ internal data class DemoState(
     val mapMode: DemoMapMode = DemoMapMode.Flat,
     val flatMapSettings: DemoMapSettings = DemoMapSettings(),
     val azimuthalMapSettings: DemoMapSettings = DemoMapSettings(),
+    val sphereMapSettings: DemoMapSettings = DemoMapSettings(),
     val mapStyleSettings: DemoMapStyleSettings = DemoMapStyleSettings(),
 ) {
     val activeMapSettings: DemoMapSettings
         get() = when (mapMode) {
             DemoMapMode.Flat -> flatMapSettings
             DemoMapMode.Azimuthal -> azimuthalMapSettings
+            DemoMapMode.Sphere -> sphereMapSettings
         }
 }
 
@@ -46,6 +48,7 @@ internal enum class DemoMapMode(
 ) {
     Flat("Flat", baseAspectRatio = 2f),
     Azimuthal("Azimuthal", baseAspectRatio = 1f),
+    Sphere("Sphere", baseAspectRatio = 1f),
 }
 
 /** Camera controls for one map mode. */
