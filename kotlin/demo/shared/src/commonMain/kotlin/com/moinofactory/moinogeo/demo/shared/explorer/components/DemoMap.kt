@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,8 +73,8 @@ private val HighlightBorder = Color(0xFFFF6D00)
 /**
  * Demo wrapper around [PlaneMap], [AzimuthalMap], and a Sphere placeholder using
  * bundled Natural Earth topography and countries. Each mode keeps its own camera.
- * The map canvas uses a determined aspect ratio from [DemoMapSettings] stretch
- * values instead of stretching to fill the parent.
+ * The map fills the available canvas; stretch from [DemoMapSettings] is applied
+ * through the projection, not by resizing the canvas.
  */
 @Composable
 internal fun DemoMap(
@@ -118,122 +117,98 @@ internal fun DemoMap(
         GeoPoint(latitude = lat, longitude = lon)
     }
 
-    val activeSettings = when (mode) {
-        DemoMapMode.Flat -> flatSettings
-        DemoMapMode.Azimuthal -> azimuthalSettings
-        DemoMapMode.Sphere -> sphereSettings
-    }
-    val mapAspectRatio = activeSettings.aspectRatio(mode.baseAspectRatio)
     val mapStyle = styleSettings.toMapStyle()
 
     Column(modifier = modifier) {
-        BoxWithConstraints(
+        Surface(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            tonalElevation = 1.dp,
         ) {
-            val containerAspect = if (maxHeight > 0.dp) {
-                maxWidth / maxHeight
-            } else {
-                mapAspectRatio
-            }
-            val mapSizeModifier = if (containerAspect > mapAspectRatio) {
-                Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(mapAspectRatio)
-            } else {
-                Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(mapAspectRatio)
-            }
-            Surface(
-                modifier = mapSizeModifier.clip(RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                tonalElevation = 1.dp,
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (mode) {
-                        DemoMapMode.Flat -> PlaneMap(
-                            modifier = Modifier.fillMaxSize(),
-                            mapStyle = mapStyle,
-                            boundaryProvider = boundaryProvider,
-                            topographyProvider = topographyProvider,
-                            state = planeState,
-                            onMapClick = { point ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (mode) {
+                    DemoMapMode.Flat -> PlaneMap(
+                        modifier = Modifier.fillMaxSize(),
+                        mapStyle = mapStyle,
+                        boundaryProvider = boundaryProvider,
+                        topographyProvider = topographyProvider,
+                        state = planeState,
+                        onMapClick = { point ->
+                            clickedPoint = point
+                            overlayClickLabel = null
+                        },
+                    ) {
+                        PlaceOverlays(
+                            selectedPlace = selectedPlace,
+                            selectedCountryFeature = selectedCountryFeature,
+                            markerPoint = markerPoint,
+                            onOverlayClick = { label, point ->
+                                overlayClickLabel = label
                                 clickedPoint = point
-                                overlayClickLabel = null
                             },
-                        ) {
-                            PlaceOverlays(
-                                selectedPlace = selectedPlace,
-                                selectedCountryFeature = selectedCountryFeature,
-                                markerPoint = markerPoint,
-                                onOverlayClick = { label, point ->
-                                    overlayClickLabel = label
-                                    clickedPoint = point
-                                },
-                            )
-                        }
-
-                        DemoMapMode.Azimuthal -> AzimuthalMap(
-                            modifier = Modifier.fillMaxSize(),
-                            mapStyle = mapStyle,
-                            boundaryProvider = boundaryProvider,
-                            topographyProvider = topographyProvider,
-                            state = azimuthalState,
-                            onMapClick = { point ->
-                                clickedPoint = point
-                                overlayClickLabel = null
-                            },
-                        ) {
-                            PlaceOverlays(
-                                selectedPlace = selectedPlace,
-                                selectedCountryFeature = selectedCountryFeature,
-                                markerPoint = markerPoint,
-                                onOverlayClick = { label, point ->
-                                    overlayClickLabel = label
-                                    clickedPoint = point
-                                },
-                            )
-                        }
-
-                        DemoMapMode.Sphere -> SphereMapPlaceholder(
-                            modifier = Modifier.fillMaxSize(),
-                            backgroundColor = mapStyle.backgroundColor,
                         )
                     }
 
-                    if (onOpenMapStyleSettings != null) {
-                        MapOverlayIconButton(
-                            onClick = onOpenMapStyleSettings,
-                            contentDescription = "Map Style",
-                            imageVector = Icons.palette,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(8.dp),
+                    DemoMapMode.Azimuthal -> AzimuthalMap(
+                        modifier = Modifier.fillMaxSize(),
+                        mapStyle = mapStyle,
+                        boundaryProvider = boundaryProvider,
+                        topographyProvider = topographyProvider,
+                        state = azimuthalState,
+                        onMapClick = { point ->
+                            clickedPoint = point
+                            overlayClickLabel = null
+                        },
+                    ) {
+                        PlaceOverlays(
+                            selectedPlace = selectedPlace,
+                            selectedCountryFeature = selectedCountryFeature,
+                            markerPoint = markerPoint,
+                            onOverlayClick = { label, point ->
+                                overlayClickLabel = label
+                                clickedPoint = point
+                            },
                         )
                     }
 
-                    MapModeSelector(
-                        selected = mode,
-                        onSelect = onSelectMode,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 8.dp)
-                            .width(168.dp),
+                    DemoMapMode.Sphere -> SphereMapPlaceholder(
+                        modifier = Modifier.fillMaxSize(),
+                        backgroundColor = mapStyle.backgroundColor,
                     )
+                }
 
-                    if (onOpenMapSettings != null) {
-                        MapOverlayIconButton(
-                            onClick = onOpenMapSettings,
-                            contentDescription = "Map Settings",
-                            imageVector = Icons.settings,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp),
-                        )
-                    }
+                if (onOpenMapStyleSettings != null) {
+                    MapOverlayIconButton(
+                        onClick = onOpenMapStyleSettings,
+                        contentDescription = "Map Style",
+                        imageVector = Icons.palette,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp),
+                    )
+                }
+
+                MapModeSelector(
+                    selected = mode,
+                    onSelect = onSelectMode,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                        .width(168.dp),
+                )
+
+                if (onOpenMapSettings != null) {
+                    MapOverlayIconButton(
+                        onClick = onOpenMapSettings,
+                        contentDescription = "Map Settings",
+                        imageVector = Icons.settings,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp),
+                    )
                 }
             }
         }
@@ -398,9 +373,9 @@ private val DemoMapMode.icon: ImageVector
 
 @Composable
 private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {
-    // Stretch is applied via the demo canvas aspect ratio, not projection scale.
-    LaunchedEffect(Unit) {
-        state.verticalScale = 1f
+    // Stretch lives on the projection so canvas size can change freely.
+    LaunchedEffect(settings.horizontalScale, settings.verticalScale) {
+        state.verticalScale = settings.projectionVerticalScale()
     }
     LaunchedEffect(settings.rotationAngle) {
         state.rotationAngle = settings.rotationAngle
@@ -418,9 +393,9 @@ private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {
 
 @Composable
 private fun BindAzimuthalCamera(state: AzimuthalMapState, settings: DemoMapSettings) {
-    // Stretch is applied via the demo canvas aspect ratio, not projection scale.
-    LaunchedEffect(Unit) {
-        state.verticalScale = 1f
+    // Stretch lives on the projection so canvas size can change freely.
+    LaunchedEffect(settings.horizontalScale, settings.verticalScale) {
+        state.verticalScale = settings.projectionVerticalScale()
     }
     LaunchedEffect(settings.rotationAngle) {
         state.rotationAngle = settings.rotationAngle

@@ -151,7 +151,8 @@ class PlaneMapState(
         val mapX = MapProjection.longitudeToMapX(point.longitude, width)
         val mapY = MapProjection.latitudeToMapY(point.latitude, height)
         val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
-        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
+        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale) *
+            MapProjection.geographicYFactor(width, height)
 
         offsetX = cx - mapX
         var desiredOffsetY = -(mapY - pivot) * scale
@@ -167,12 +168,14 @@ class PlaneMapState(
      * Bumps [zoom] so [desiredOffsetY] stays inside the vertical canvas clamp.
      */
     private fun ensureVerticalRoomForOffset(desiredOffsetY: Float) {
+        val width = viewportSize.width
         val height = viewportSize.height
-        if (height <= 0f) return
+        if (width <= 0f || height <= 0f) return
         // Grow zoom until the desired offset fits or maxZoom is hit.
         var guard = 0
         while (guard++ < 24) {
             val bounds = verticalOffsetBounds(
+                viewportWidth = width,
                 viewportHeight = height,
                 zoom = zoom,
                 verticalScale = verticalScale,
@@ -270,7 +273,8 @@ class PlaneMapState(
         val mapX = MapProjection.longitudeToMapX(geo.longitude, width)
         val mapY = MapProjection.latitudeToMapY(geo.latitude, height)
         val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
-        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
+        val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale) *
+            MapProjection.geographicYFactor(width, height)
 
         var sX = screenX
         var sY = screenY
@@ -302,6 +306,7 @@ class PlaneMapState(
 
     internal fun clampVerticalOffset() {
         val bounds = verticalOffsetBounds(
+            viewportWidth = viewportSize.width,
             viewportHeight = viewportSize.height,
             zoom = zoom,
             verticalScale = verticalScale,

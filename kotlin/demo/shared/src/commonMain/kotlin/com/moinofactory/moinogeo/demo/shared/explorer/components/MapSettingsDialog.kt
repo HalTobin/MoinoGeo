@@ -45,8 +45,8 @@ internal fun MapSettingsDialog(
             ) {
                 Text(
                     text = "These controls apply only to the ${mode.title} map. " +
-                        "Horizontal and vertical stretch set the map aspect ratio " +
-                        "(base ${formatAspect(mode.baseAspectRatio)}).",
+                        "Horizontal and vertical stretch distort the projection " +
+                        "inside the available canvas (base ${formatAspect(mode.baseAspectRatio)}).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -66,7 +66,7 @@ internal fun MapSettingsDialog(
                     onValueChange = onMapVerticalScaleChange,
                 )
                 Text(
-                    text = "Aspect ratio: ${formatAspect(settings.aspectRatio(mode.baseAspectRatio))}",
+                    text = "Effective aspect: ${formatAspect(settings.aspectRatio(mode.baseAspectRatio))}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),

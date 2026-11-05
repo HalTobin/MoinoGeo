@@ -22,9 +22,12 @@ import kotlin.math.sin
  * [offsetY] via [PlaneMapState.setCenter], not a shifted central meridian.
  *
  * [verticalScale] is an aspect-ratio adjustment along Y (1f = classic
- * equirectangular). It is **not** spherical distortion centering: meridians stay
- * parallel, and east-west stretch still grows as sec(φ) toward the poles.
- * [centerLatitude] only picks the latitude that the Y stretch pivots around.
+ * equirectangular with equal degrees-per-pixel on X and Y). Canvas aspect does
+ * **not** distort geography: [geographicYFactor] compensates so a square or tall
+ * viewport keeps the same proportions as a 2:1 one. It is **not** spherical
+ * distortion centering: meridians stay parallel, and east-west stretch still
+ * grows as sec(φ) toward the poles. [centerLatitude] only picks the latitude
+ * that the Y stretch pivots around.
  */
 @Immutable
 internal data class MapProjection(
@@ -40,7 +43,9 @@ internal data class MapProjection(
     val worldHeight: Float get() = size.height
 
     /** Effective Y zoom for distances away from [centerLatitude]. */
-    val zoomY: Float get() = zoom * verticalScale.coerceAtLeast(MinVerticalScale)
+    val zoomY: Float
+        get() = zoom * verticalScale.coerceAtLeast(MinVerticalScale) *
+            geographicYFactor(size.width, size.height)
 
     /** Map-Y of the vertical aspect-ratio pivot ([centerLatitude]). */
     val pivotY: Float
@@ -179,6 +184,18 @@ internal data class MapProjection(
 
         const val MinVerticalScale = 0.1f
 
+        /** Natural equirectangular width:height (360°:180°). */
+        const val GeographicAspectRatio = 2f
+
+        /**
+         * Y compensation so equal degrees-per-pixel holds on a viewport of
+         * [viewportWidth]×[viewportHeight] when user vertical scale is 1.
+         */
+        fun geographicYFactor(viewportWidth: Float, viewportHeight: Float): Float {
+            if (viewportWidth <= 0f || viewportHeight <= 0f) return 1f
+            return (viewportWidth / GeographicAspectRatio) / viewportHeight
+        }
+
         /** Longitude → map X with the primary tile fixed on ±180° (Greenwich at center). */
         fun longitudeToMapX(longitude: Double, worldWidth: Float): Float =
             ((longitude + 180.0) / 360.0 * worldWidth).toFloat()
@@ -216,17 +233,22 @@ internal fun wrapOffsetCentered(value: Float, period: Float): Float {
 /**
  * Allowed [PlaneMapState.offsetY] range so the viewport stays inside the map
  * canvas vertically, given the aspect-ratio pivot at [centerLatitude].
+ *
+ * [viewportWidth] participates only through [MapProjection.geographicYFactor]
+ * so clamps stay consistent with canvas-independent proportions.
  */
 internal fun verticalOffsetBounds(
+    viewportWidth: Float,
     viewportHeight: Float,
     zoom: Float,
     verticalScale: Float,
     centerLatitude: Double,
 ): ClosedFloatingPointRange<Float> {
-    if (viewportHeight <= 0f || zoom <= 0f) return 0f..0f
+    if (viewportWidth <= 0f || viewportHeight <= 0f || zoom <= 0f) return 0f..0f
     val cy = viewportHeight / 2f
     val pivot = MapProjection.latitudeToMapY(centerLatitude, viewportHeight)
-    val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale)
+    val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale) *
+        MapProjection.geographicYFactor(viewportWidth, viewportHeight)
     val zoomY = zoom * scale
     val h = viewportHeight
 
@@ -238,11 +260,18 @@ internal fun verticalOffsetBounds(
 }
 
 internal fun maxVerticalOffset(
+    viewportWidth: Float,
     viewportHeight: Float,
     zoom: Float,
     verticalScale: Float,
-    centerLatitude: Double = 0.0,
+    centerLatitude: Double,
 ): Float {
-    val bounds = verticalOffsetBounds(viewportHeight, zoom, verticalScale, centerLatitude)
+    val bounds = verticalOffsetBounds(
+        viewportWidth,
+        viewportHeight,
+        zoom,
+        verticalScale,
+        centerLatitude,
+    )
     return maxOf(0f, -bounds.start, bounds.endInclusive)
 }

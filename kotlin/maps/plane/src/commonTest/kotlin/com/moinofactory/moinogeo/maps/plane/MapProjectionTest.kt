@@ -39,6 +39,25 @@ class MapProjectionTest {
     }
 
     @Test
+    fun canvasAspectDoesNotDistortEquirectangularProportions() {
+        val square = MapProjection(
+            size = Size(360f, 360f),
+            zoom = 1f,
+            offsetX = 0f,
+            offsetY = 0f,
+        )
+        val equator = square.toOffsetOnTile(GeoPoint(0.0, 0.0), tileX = 0)
+        val north45 = square.toOffsetOnTile(GeoPoint(45.0, 0.0), tileX = 0)
+        val east45 = square.toOffsetOnTile(GeoPoint(0.0, 45.0), tileX = 0)
+        // Same angular span keeps the same pixel length on a non-2:1 canvas
+        assertEquals(
+            kotlin.math.abs(equator.y - north45.y),
+            kotlin.math.abs(east45.x - equator.x),
+            absoluteTolerance = 0.01f,
+        )
+    }
+
+    @Test
     fun verticalScalePivotsAroundCenterLatitude() {
         val pivoted = projection.copy(verticalScale = 2f, centerLatitude = 45.0)
         val pivot = pivoted.toOffsetOnTile(GeoPoint(45.0, 0.0), tileX = 0)
@@ -278,10 +297,26 @@ class MapProjectionTest {
 
     @Test
     fun maxVerticalOffsetAtFitIsZero() {
-        assertEquals(0f, maxVerticalOffset(200f, zoom = 1f, verticalScale = 1f))
+        // 400×200 is geographic 2:1, so zoom 1 fits exactly
+        assertEquals(
+            0f,
+            maxVerticalOffset(
+                viewportWidth = 400f,
+                viewportHeight = 200f,
+                zoom = 1f,
+                verticalScale = 1f,
+                centerLatitude = 0.0,
+            ),
+        )
         assertEquals(
             50f,
-            maxVerticalOffset(200f, zoom = 2f, verticalScale = 1f),
+            maxVerticalOffset(
+                viewportWidth = 400f,
+                viewportHeight = 200f,
+                zoom = 2f,
+                verticalScale = 1f,
+                centerLatitude = 0.0,
+            ),
             absoluteTolerance = 0.01f,
         )
     }

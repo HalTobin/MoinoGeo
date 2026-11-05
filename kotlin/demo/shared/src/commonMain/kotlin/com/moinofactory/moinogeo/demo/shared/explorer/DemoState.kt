@@ -46,7 +46,7 @@ internal data class DemoState(
 
 internal enum class DemoMapMode(
     val title: String,
-    /** Natural map canvas width/height before horizontal/vertical stretch. */
+    /** Natural geographic width/height before horizontal/vertical stretch. */
     val baseAspectRatio: Float,
 ) {
     Flat("Flat", baseAspectRatio = 2f),
@@ -62,7 +62,17 @@ internal data class DemoMapSettings(
     val centerLongitude: Float = 0f,
     val rotationAngle: Float = 0f,
 ) {
-    /** Canvas aspect ratio after stretch (does not follow the parent layout). */
+    /**
+     * Relative Y stretch for the map projection. Horizontal stretch is folded in
+     * so only the ratio matters; canvas size stays independent.
+     */
+    fun projectionVerticalScale(): Float {
+        val horizontal = horizontalScale.coerceAtLeast(MinStretch)
+        val vertical = verticalScale.coerceAtLeast(MinStretch)
+        return (vertical / horizontal).coerceIn(MinProjectionScale, MaxProjectionScale)
+    }
+
+    /** Effective geographic aspect after stretch (informational). */
     fun aspectRatio(baseAspectRatio: Float): Float {
         val horizontal = horizontalScale.coerceAtLeast(MinStretch)
         val vertical = verticalScale.coerceAtLeast(MinStretch)
@@ -73,6 +83,8 @@ internal data class DemoMapSettings(
         const val MinStretch = 0.5f
         const val MinAspectRatio = 0.35f
         const val MaxAspectRatio = 4f
+        const val MinProjectionScale = 0.2f
+        const val MaxProjectionScale = 5f
     }
 }
 

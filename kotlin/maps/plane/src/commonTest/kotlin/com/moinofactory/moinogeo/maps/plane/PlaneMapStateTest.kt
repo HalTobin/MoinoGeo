@@ -154,7 +154,15 @@ class PlaneMapStateTest {
         state.verticalScale = 1f
         assertEquals(50f, state.offsetY, absoluteTolerance = 0.01f)
         state.verticalScale = 2f
-        assertTrue(state.offsetY <= maxVerticalOffset(200f, 2f, 2f))
+        assertTrue(
+            state.offsetY <= maxVerticalOffset(
+                viewportWidth = 400f,
+                viewportHeight = 200f,
+                zoom = 2f,
+                verticalScale = 2f,
+                centerLatitude = 0.0,
+            ),
+        )
         state.verticalScale = 0.5f
         assertEquals(0f, state.offsetY, absoluteTolerance = 0.01f)
     }
