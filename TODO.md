@@ -1,4 +1,6 @@
-- in demo, move common map style options to another dialog (IconButton on top of the Map on TopStart)
-- in demo, move map mode selector (on top of the Map on TopCenter)
-- horizontal stretch options
-- map shouldn't stretch based on the canvas, but should have a determined aspect ratio (with default values that can be changed, cf horizontal and vertical stretch)
+# Done
+
+- [x] Move common map style options to dialog (TopStart IconButton)
+- [x] Move map mode selector onto map (TopCenter)
+- [x] Horizontal stretch options
+- [x] Determined map aspect ratio from horizontal/vertical stretch

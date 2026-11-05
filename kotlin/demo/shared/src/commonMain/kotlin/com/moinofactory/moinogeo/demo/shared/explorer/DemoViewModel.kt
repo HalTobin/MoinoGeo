@@ -76,11 +76,16 @@ internal class DemoViewModel(
             DemoAction.CloseSettings -> _state.update { it.copy(isSettingsOpen = false) }
             DemoAction.OpenMapSettings -> _state.update { it.copy(isMapSettingsOpen = true) }
             DemoAction.CloseMapSettings -> _state.update { it.copy(isMapSettingsOpen = false) }
+            DemoAction.OpenMapStyleSettings -> _state.update { it.copy(isMapStyleSettingsOpen = true) }
+            DemoAction.CloseMapStyleSettings -> _state.update { it.copy(isMapStyleSettingsOpen = false) }
             is DemoAction.SelectFlagLibrary -> onSelectFlagLibrary(action.library)
             is DemoAction.SelectViewMode -> _state.update { it.copy(selectedViewMode = action.mode) }
 
             is DemoAction.SelectMapMode -> _state.update { it.copy(mapMode = action.mode) }
             DemoAction.ResetActiveMapSettings -> updateActiveMap { DemoMapSettings() }
+            is DemoAction.SetMapHorizontalScale -> updateActiveMap {
+                it.copy(horizontalScale = action.scale.coerceIn(0.5f, 2.5f))
+            }
             is DemoAction.SetMapVerticalScale -> updateActiveMap {
                 it.copy(verticalScale = action.scale.coerceIn(0.5f, 2.5f))
             }
@@ -93,7 +98,20 @@ internal class DemoViewModel(
             is DemoAction.SetMapRotationAngle -> updateActiveMap {
                 it.copy(rotationAngle = action.angle.coerceIn(-180f, 180f))
             }
-            is DemoAction.SetMapBordersScaleWithZoom -> updateActiveMap {
+
+            DemoAction.ResetMapStyleSettings -> _state.update {
+                it.copy(mapStyleSettings = DemoMapStyleSettings())
+            }
+            is DemoAction.SelectMapStylePreset -> updateMapStyle {
+                it.copy(preset = action.preset)
+            }
+            is DemoAction.SetMapShowBorders -> updateMapStyle {
+                it.copy(showBorders = action.show)
+            }
+            is DemoAction.SetMapShowTopography -> updateMapStyle {
+                it.copy(showTopography = action.show)
+            }
+            is DemoAction.SetMapBordersScaleWithZoom -> updateMapStyle {
                 it.copy(bordersScaleWithZoom = action.scaleWithZoom)
             }
 
@@ -109,6 +127,12 @@ internal class DemoViewModel(
                 DemoMapMode.Flat -> state.copy(flatMapSettings = updated)
                 DemoMapMode.Azimuthal -> state.copy(azimuthalMapSettings = updated)
             }
+        }
+    }
+
+    private fun updateMapStyle(transform: (DemoMapStyleSettings) -> DemoMapStyleSettings) {
+        _state.update { state ->
+            state.copy(mapStyleSettings = transform(state.mapStyleSettings))
         }
     }
 

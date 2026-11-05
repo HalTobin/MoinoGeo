@@ -1,12 +1,16 @@
 package com.moinofactory.moinogeo.demo.shared.explorer.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,12 +39,13 @@ import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.core.domain.model.GeoPlaceType
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapMode
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapSettings
+import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapStyleSettings
 import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
+import com.moinofactory.moinogeo.demo.shared.ui.icon.palette
 import com.moinofactory.moinogeo.demo.shared.ui.icon.settings
 import com.moinofactory.moinogeo.maps.countries.DefaultBoundaryProvider
 import com.moinofactory.moinogeo.maps.core.BoundaryFeature
 import com.moinofactory.moinogeo.maps.core.GeoPoint
-import com.moinofactory.moinogeo.maps.core.MapDefaults
 import com.moinofactory.moinogeo.maps.plane.AzimuthalMap
 import com.moinofactory.moinogeo.maps.plane.AzimuthalMapState
 import com.moinofactory.moinogeo.maps.plane.MapScope
@@ -56,7 +61,9 @@ private val HighlightBorder = Color(0xFFFF6D00)
 
 /**
  * Demo wrapper around [PlaneMap] and [AzimuthalMap] using bundled Natural Earth
- * topography and countries. Each mode keeps its own camera.
+ * topography and countries. Each mode keeps its own camera. The map canvas uses a
+ * determined aspect ratio from [DemoMapSettings] stretch values instead of
+ * stretching to fill the parent.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,9 +72,11 @@ internal fun DemoMap(
     mode: DemoMapMode,
     flatSettings: DemoMapSettings,
     azimuthalSettings: DemoMapSettings,
+    styleSettings: DemoMapStyleSettings,
     onSelectMode: (DemoMapMode) -> Unit,
     modifier: Modifier = Modifier,
     onOpenMapSettings: (() -> Unit)? = null,
+    onOpenMapStyleSettings: (() -> Unit)? = null,
 ) {
     val boundaryProvider = remember { DefaultBoundaryProvider() }
     val topographyProvider = remember { DefaultTopographyProvider() }
@@ -101,92 +110,112 @@ internal fun DemoMap(
         DemoMapMode.Flat -> flatSettings
         DemoMapMode.Azimuthal -> azimuthalSettings
     }
-    val mapStyle = MapDefaults.style(
-        borderWidth = 1f,
-        borderColor = Color(0xFF455A64),
-        borderScaleWithZoom = activeSettings.bordersScaleWithZoom,
-    )
+    val mapAspectRatio = activeSettings.aspectRatio(mode.baseAspectRatio)
+    val mapStyle = styleSettings.toMapStyle()
 
     Column(modifier = modifier) {
-        MapModeSelector(
-            selected = mode,
-            onSelect = onSelectMode,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Surface(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp)),
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 1.dp,
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (mode) {
-                    DemoMapMode.Flat -> PlaneMap(
-                        modifier = Modifier.fillMaxSize(),
-                        mapStyle = mapStyle,
-                        boundaryProvider = boundaryProvider,
-                        topographyProvider = topographyProvider,
-                        state = planeState,
-                        onMapClick = { point ->
-                            clickedPoint = point
-                            overlayClickLabel = null
-                        },
-                    ) {
-                        PlaceOverlays(
-                            selectedPlace = selectedPlace,
-                            selectedCountryFeature = selectedCountryFeature,
-                            markerPoint = markerPoint,
-                            onOverlayClick = { label, point ->
-                                overlayClickLabel = label
+            val containerAspect = if (maxHeight > 0.dp) {
+                maxWidth / maxHeight
+            } else {
+                mapAspectRatio
+            }
+            val mapSizeModifier = if (containerAspect > mapAspectRatio) {
+                Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(mapAspectRatio)
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(mapAspectRatio)
+            }
+            Surface(
+                modifier = mapSizeModifier.clip(RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 1.dp,
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (mode) {
+                        DemoMapMode.Flat -> PlaneMap(
+                            modifier = Modifier.fillMaxSize(),
+                            mapStyle = mapStyle,
+                            boundaryProvider = boundaryProvider,
+                            topographyProvider = topographyProvider,
+                            state = planeState,
+                            onMapClick = { point ->
                                 clickedPoint = point
+                                overlayClickLabel = null
                             },
-                        )
-                    }
-
-                    DemoMapMode.Azimuthal -> AzimuthalMap(
-                        modifier = Modifier.fillMaxSize(),
-                        mapStyle = mapStyle,
-                        boundaryProvider = boundaryProvider,
-                        topographyProvider = topographyProvider,
-                        state = azimuthalState,
-                        onMapClick = { point ->
-                            clickedPoint = point
-                            overlayClickLabel = null
-                        },
-                    ) {
-                        PlaceOverlays(
-                            selectedPlace = selectedPlace,
-                            selectedCountryFeature = selectedCountryFeature,
-                            markerPoint = markerPoint,
-                            onOverlayClick = { label, point ->
-                                overlayClickLabel = label
-                                clickedPoint = point
-                            },
-                        )
-                    }
-                }
-
-                if (onOpenMapSettings != null) {
-                    IconButton(
-                        onClick = onOpenMapSettings,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp),
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                            tonalElevation = 3.dp,
                         ) {
-                            Icon(
-                                imageVector = Icons.settings,
-                                contentDescription = "Map Settings",
-                                modifier = Modifier.padding(8.dp),
-                                tint = MaterialTheme.colorScheme.onSurface,
+                            PlaceOverlays(
+                                selectedPlace = selectedPlace,
+                                selectedCountryFeature = selectedCountryFeature,
+                                markerPoint = markerPoint,
+                                onOverlayClick = { label, point ->
+                                    overlayClickLabel = label
+                                    clickedPoint = point
+                                },
                             )
                         }
+
+                        DemoMapMode.Azimuthal -> AzimuthalMap(
+                            modifier = Modifier.fillMaxSize(),
+                            mapStyle = mapStyle,
+                            boundaryProvider = boundaryProvider,
+                            topographyProvider = topographyProvider,
+                            state = azimuthalState,
+                            onMapClick = { point ->
+                                clickedPoint = point
+                                overlayClickLabel = null
+                            },
+                        ) {
+                            PlaceOverlays(
+                                selectedPlace = selectedPlace,
+                                selectedCountryFeature = selectedCountryFeature,
+                                markerPoint = markerPoint,
+                                onOverlayClick = { label, point ->
+                                    overlayClickLabel = label
+                                    clickedPoint = point
+                                },
+                            )
+                        }
+                    }
+
+                    if (onOpenMapStyleSettings != null) {
+                        MapOverlayIconButton(
+                            onClick = onOpenMapStyleSettings,
+                            contentDescription = "Map Style",
+                            imageVector = Icons.palette,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(8.dp),
+                        )
+                    }
+
+                    MapModeSelector(
+                        selected = mode,
+                        onSelect = onSelectMode,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 8.dp)
+                            .widthIn(max = 280.dp)
+                            .padding(horizontal = 56.dp),
+                    )
+
+                    if (onOpenMapSettings != null) {
+                        MapOverlayIconButton(
+                            onClick = onOpenMapSettings,
+                            contentDescription = "Map Settings",
+                            imageVector = Icons.settings,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp),
+                        )
                     }
                 }
             }
@@ -210,31 +239,68 @@ internal fun DemoMap(
     }
 }
 
+@Composable
+private fun MapOverlayIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
+    imageVector: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            tonalElevation = 3.dp,
+        ) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = contentDescription,
+                modifier = Modifier.padding(8.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MapModeSelector(
     selected: DemoMapMode,
     onSelect: (DemoMapMode) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        DemoMapMode.entries.forEachIndexed { index, mode ->
-            SegmentedButton(
-                selected = selected == mode,
-                onClick = { onSelect(mode) },
-                shape = SegmentedButtonDefaults.itemShape(
-                    index = index,
-                    count = DemoMapMode.entries.size,
-                ),
-                label = { Text(mode.title) },
-            )
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+        tonalElevation = 3.dp,
+    ) {
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier.padding(4.dp),
+        ) {
+            DemoMapMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = selected == mode,
+                    onClick = { onSelect(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = DemoMapMode.entries.size,
+                    ),
+                    label = { Text(mode.title) },
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {
-    LaunchedEffect(settings.verticalScale) {
-        state.verticalScale = settings.verticalScale
+    // Stretch is applied via the demo canvas aspect ratio, not projection scale.
+    LaunchedEffect(Unit) {
+        state.verticalScale = 1f
     }
     LaunchedEffect(settings.rotationAngle) {
         state.rotationAngle = settings.rotationAngle
@@ -252,8 +318,9 @@ private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {
 
 @Composable
 private fun BindAzimuthalCamera(state: AzimuthalMapState, settings: DemoMapSettings) {
-    LaunchedEffect(settings.verticalScale) {
-        state.verticalScale = settings.verticalScale
+    // Stretch is applied via the demo canvas aspect ratio, not projection scale.
+    LaunchedEffect(Unit) {
+        state.verticalScale = 1f
     }
     LaunchedEffect(settings.rotationAngle) {
         state.rotationAngle = settings.rotationAngle

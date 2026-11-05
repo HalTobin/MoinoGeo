@@ -30,6 +30,7 @@ import com.moinofactory.moinogeo.demo.shared.explorer.components.CountryListPane
 import com.moinofactory.moinogeo.demo.shared.explorer.components.DemoMap
 import com.moinofactory.moinogeo.demo.shared.explorer.components.FlagSettingsDialog
 import com.moinofactory.moinogeo.demo.shared.explorer.components.MapSettingsDialog
+import com.moinofactory.moinogeo.demo.shared.explorer.components.MapStyleDialog
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchBar
 import com.moinofactory.moinogeo.demo.shared.explorer.components.PlaceSearchDialog
 import com.moinofactory.moinogeo.demo.shared.flags.FlagDetailDialog
@@ -131,17 +132,29 @@ internal fun DemoScreenContent(
         )
     }
 
+    if (state.isMapStyleSettingsOpen) {
+        MapStyleDialog(
+            settings = state.mapStyleSettings,
+            onPresetSelected = { onAction(DemoAction.SelectMapStylePreset(it)) },
+            onShowBordersChange = { onAction(DemoAction.SetMapShowBorders(it)) },
+            onShowTopographyChange = { onAction(DemoAction.SetMapShowTopography(it)) },
+            onBordersScaleWithZoomChange = {
+                onAction(DemoAction.SetMapBordersScaleWithZoom(it))
+            },
+            onReset = { onAction(DemoAction.ResetMapStyleSettings) },
+            onDismiss = { onAction(DemoAction.CloseMapStyleSettings) },
+        )
+    }
+
     if (state.isMapSettingsOpen) {
         MapSettingsDialog(
             mode = state.mapMode,
             settings = state.activeMapSettings,
+            onMapHorizontalScaleChange = { onAction(DemoAction.SetMapHorizontalScale(it)) },
             onMapVerticalScaleChange = { onAction(DemoAction.SetMapVerticalScale(it)) },
             onMapCenterLatitudeChange = { onAction(DemoAction.SetMapCenterLatitude(it)) },
             onMapCenterLongitudeChange = { onAction(DemoAction.SetMapCenterLongitude(it)) },
             onMapRotationAngleChange = { onAction(DemoAction.SetMapRotationAngle(it)) },
-            onMapBordersScaleWithZoomChange = {
-                onAction(DemoAction.SetMapBordersScaleWithZoom(it))
-            },
             onReset = { onAction(DemoAction.ResetActiveMapSettings) },
             onDismiss = { onAction(DemoAction.CloseMapSettings) },
         )
@@ -169,8 +182,10 @@ private fun ExpandedDemoLayout(
             mode = state.mapMode,
             flatSettings = state.flatMapSettings,
             azimuthalSettings = state.azimuthalMapSettings,
+            styleSettings = state.mapStyleSettings,
             onSelectMode = { onAction(DemoAction.SelectMapMode(it)) },
             onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
+            onOpenMapStyleSettings = { onAction(DemoAction.OpenMapStyleSettings) },
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -223,8 +238,10 @@ private fun CompactDemoLayout(
             mode = state.mapMode,
             flatSettings = state.flatMapSettings,
             azimuthalSettings = state.azimuthalMapSettings,
+            styleSettings = state.mapStyleSettings,
             onSelectMode = { onAction(DemoAction.SelectMapMode(it)) },
             onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
+            onOpenMapStyleSettings = { onAction(DemoAction.OpenMapStyleSettings) },
         )
     }
 }

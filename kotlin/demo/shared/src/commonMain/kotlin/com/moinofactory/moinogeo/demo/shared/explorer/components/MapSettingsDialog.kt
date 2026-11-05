@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,11 +26,11 @@ import kotlin.math.roundToInt
 internal fun MapSettingsDialog(
     mode: DemoMapMode,
     settings: DemoMapSettings,
+    onMapHorizontalScaleChange: (Float) -> Unit,
     onMapVerticalScaleChange: (Float) -> Unit,
     onMapCenterLatitudeChange: (Float) -> Unit,
     onMapCenterLongitudeChange: (Float) -> Unit,
     onMapRotationAngleChange: (Float) -> Unit,
-    onMapBordersScaleWithZoomChange: (Boolean) -> Unit,
     onReset: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -45,17 +44,32 @@ internal fun MapSettingsDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "These controls apply only to the ${mode.title} map.",
+                    text = "These controls apply only to the ${mode.title} map. " +
+                        "Horizontal and vertical stretch set the map aspect ratio " +
+                        "(base ${formatAspect(mode.baseAspectRatio)}).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+                MapSliderRow(
+                    label = "Horizontal stretch",
+                    valueLabel = "${(settings.horizontalScale * 100).roundToInt() / 100.0}×",
+                    value = settings.horizontalScale,
+                    valueRange = 0.5f..2.5f,
+                    onValueChange = onMapHorizontalScaleChange,
+                )
                 MapSliderRow(
                     label = "Vertical stretch",
                     valueLabel = "${(settings.verticalScale * 100).roundToInt() / 100.0}×",
                     value = settings.verticalScale,
                     valueRange = 0.5f..2.5f,
                     onValueChange = onMapVerticalScaleChange,
+                )
+                Text(
+                    text = "Aspect ratio: ${formatAspect(settings.aspectRatio(mode.baseAspectRatio))}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
                 MapSliderRow(
                     label = "Center latitude",
@@ -78,25 +92,6 @@ internal fun MapSettingsDialog(
                     valueRange = -180f..180f,
                     onValueChange = onMapRotationAngleChange,
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = "Borders scale with zoom",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Switch(
-                        checked = settings.bordersScaleWithZoom,
-                        onCheckedChange = onMapBordersScaleWithZoomChange,
-                    )
-                }
             }
         },
         dismissButton = {
@@ -139,4 +134,9 @@ private fun MapSliderRow(
             valueRange = valueRange,
         )
     }
+}
+
+private fun formatAspect(ratio: Float): String {
+    val rounded = (ratio * 100).roundToInt() / 100.0
+    return "$rounded:1"
 }

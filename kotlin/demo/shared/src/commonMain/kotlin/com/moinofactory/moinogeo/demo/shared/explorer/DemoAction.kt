@@ -20,15 +20,23 @@ internal sealed class DemoAction {
     data object CloseSettings : DemoAction()
     data object OpenMapSettings : DemoAction()
     data object CloseMapSettings : DemoAction()
+    data object OpenMapStyleSettings : DemoAction()
+    data object CloseMapStyleSettings : DemoAction()
     data class SelectFlagLibrary(val library: FlagLibraryType) : DemoAction()
     data class SelectViewMode(val mode: FlagViewMode) : DemoAction()
 
     data class SelectMapMode(val mode: DemoMapMode) : DemoAction()
     data object ResetActiveMapSettings : DemoAction()
+    data class SetMapHorizontalScale(val scale: Float) : DemoAction()
     data class SetMapVerticalScale(val scale: Float) : DemoAction()
     data class SetMapCenterLatitude(val latitude: Float) : DemoAction()
     data class SetMapCenterLongitude(val longitude: Float) : DemoAction()
     data class SetMapRotationAngle(val angle: Float) : DemoAction()
+
+    data object ResetMapStyleSettings : DemoAction()
+    data class SelectMapStylePreset(val preset: DemoMapStylePreset) : DemoAction()
+    data class SetMapShowBorders(val show: Boolean) : DemoAction()
+    data class SetMapShowTopography(val show: Boolean) : DemoAction()
     data class SetMapBordersScaleWithZoom(val scaleWithZoom: Boolean) : DemoAction()
 
     data class InspectCountry(val country: Country) : DemoAction()
