@@ -1,6 +1,5 @@
 package com.moinofactory.moinogeo.demo.shared.flags.visualizers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.core.domain.model.Country
+import com.moinofactory.moinogeo.demo.shared.flags.CountryContextClickable
 import com.moinofactory.moinogeo.flags.FlagAssetProvider
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -37,6 +37,7 @@ internal fun FlagGridVisualizer(
     countries: List<Country>,
     provider: FlagAssetProvider,
     onCountryClick: (Country) -> Unit,
+    onCountryGoTo: (Country) -> Unit,
     modifier: Modifier = Modifier,
     fallback: Any? = null,
 ) {
@@ -47,36 +48,42 @@ internal fun FlagGridVisualizer(
         modifier = modifier.fillMaxSize(),
     ) {
         items(countries) { country ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onCountryClick(country) },
+            CountryContextClickable(
+                country = country,
+                onClick = { onCountryClick(country) },
+                onGoTo = { onCountryGoTo(country) },
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp)),
                 ) {
-                    FlagIcon(
-                        iso2Code = country.iso2,
-                        provider = provider,
-                        modifier = Modifier.size(52.dp, 38.dp),
-                        fallback = fallback,
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = country.iso2,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                    Text(
-                        text = country.name,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                    ) {
+                        FlagIcon(
+                            iso2Code = country.iso2,
+                            provider = provider,
+                            modifier = Modifier.size(52.dp, 38.dp),
+                            fallback = fallback,
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = country.iso2,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        Text(
+                            text = country.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }

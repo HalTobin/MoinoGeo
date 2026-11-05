@@ -25,6 +25,7 @@ internal fun CountryListPane(
     selectedLibrary: FlagLibraryType,
     selectedViewMode: FlagViewMode,
     onCountryClick: (Country) -> Unit,
+    onCountryGoTo: (Country) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -59,6 +60,7 @@ internal fun CountryListPane(
                             countries = countries,
                             provider = provider,
                             onCountryClick = onCountryClick,
+                            onCountryGoTo = onCountryGoTo,
                             fallback = fallback,
                             modifier = Modifier.padding(top = 24.dp),
                         )
@@ -68,6 +70,7 @@ internal fun CountryListPane(
                             countries = countries,
                             provider = provider,
                             onCountryClick = onCountryClick,
+                            onCountryGoTo = onCountryGoTo,
                             fallback = fallback,
                             modifier = Modifier.padding(top = 24.dp),
                         )
@@ -76,6 +79,7 @@ internal fun CountryListPane(
                         FlagComparisonVisualizer(
                             countries = countries,
                             onCountryClick = onCountryClick,
+                            onCountryGoTo = onCountryGoTo,
                             modifier = Modifier.padding(top = 24.dp),
                         )
                     }

@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.core.domain.model.Country
+import com.moinofactory.moinogeo.demo.shared.flags.CountryContextClickable
 import com.moinofactory.moinogeo.flags.FlagAssetProvider
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -31,6 +32,7 @@ internal fun FlagListVisualizer(
     countries: List<Country>,
     provider: FlagAssetProvider,
     onCountryClick: (Country) -> Unit,
+    onCountryGoTo: (Country) -> Unit,
     modifier: Modifier = Modifier,
     fallback: Any? = null,
 ) {
@@ -39,32 +41,36 @@ internal fun FlagListVisualizer(
         modifier = modifier.fillMaxSize(),
     ) {
         items(countries) { country ->
-            Card(
+            CountryContextClickable(
+                country = country,
+                onClick = { onCountryClick(country) },
+                onGoTo = { onCountryGoTo(country) },
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { onCountryClick(country) }
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                ) {
-                    FlagIcon(
-                        iso2Code = country.iso2,
-                        provider = provider,
-                        modifier = Modifier.size(48.dp, 36.dp),
-                        fallback = fallback,
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "${country.name} (${country.iso2})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                    ) {
+                        FlagIcon(
+                            iso2Code = country.iso2,
+                            provider = provider,
+                            modifier = Modifier.size(48.dp, 36.dp),
+                            fallback = fallback,
                         )
-                        Text(
-                            text = "Capital: ${country.capital ?: "N/A"}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "${country.name} (${country.iso2})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = "Capital: ${country.capital ?: "N/A"}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

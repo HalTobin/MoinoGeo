@@ -143,6 +143,31 @@ class AzimuthalMapStateTest {
     }
 
     @Test
+    fun moveToSnapsProjectionOrigin() {
+        val state = AzimuthalMapState(initialZoom = 1f)
+        state.viewportSize = Size(360f, 180f)
+        state.offsetX = 8f
+        state.moveTo(GeoPoint(latitude = 10.0, longitude = -45.0))
+        assertEquals(0f, state.offsetX, absoluteTolerance = 0.01f)
+        assertEquals(0f, state.offsetY, absoluteTolerance = 0.01f)
+        assertEquals(10.0, state.centerLatitude)
+        assertEquals(-45.0, state.centerLongitude)
+        assertEquals(1f, state.zoom)
+    }
+
+    @Test
+    fun moveToWithZoomSnapsOriginAndZoom() {
+        val state = AzimuthalMapState(initialZoom = 1f, maxZoom = 8f)
+        state.viewportSize = Size(360f, 180f)
+        state.moveTo(GeoPoint(latitude = -15.0, longitude = 120.0), zoom = 2.5f)
+        assertEquals(-15.0, state.centerLatitude)
+        assertEquals(120.0, state.centerLongitude)
+        assertEquals(2.5f, state.zoom)
+        assertEquals(-15.0, state.cameraCenter.latitude, absoluteTolerance = 1e-3)
+        assertEquals(120.0, state.cameraCenter.longitude, absoluteTolerance = 1e-3)
+    }
+
+    @Test
     fun verticalScaleStretchesAwayFromProjectionCenter() {
         val state = AzimuthalMapState(
             initialZoom = 1f,

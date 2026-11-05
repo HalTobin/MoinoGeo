@@ -1,5 +1,6 @@
 package com.moinofactory.moinogeo.maps.plane
 
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
@@ -11,7 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import com.moinofactory.moinogeo.maps.core.DefaultCameraAnimationSpec
 import com.moinofactory.moinogeo.maps.core.GeoPoint
+import com.moinofactory.moinogeo.maps.core.MapCameraController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -30,8 +33,8 @@ class PlaneMapState(
     // 1f = full world width visible; below that we'd need overlapping tiles (EvenOdd artifacts).
     val minZoom: Float = 1.0f,
     val maxZoom: Float = 12.0f,
-) : MapCamera {
-    var zoom by mutableFloatStateOf(initialZoom.coerceIn(minZoom, maxZoom))
+) : MapCamera, MapCameraController {
+    override var zoom by mutableFloatStateOf(initialZoom.coerceIn(minZoom, maxZoom))
     var offsetX by mutableFloatStateOf(initialOffsetX)
     var offsetY by mutableFloatStateOf(initialOffsetY)
     override var rotationAngle by mutableFloatStateOf(initialRotationAngle)
@@ -99,7 +102,7 @@ class PlaneMapState(
         }
 
     /** Geographic point currently under the viewport center (camera). */
-    val cameraCenter: GeoPoint
+    override val cameraCenter: GeoPoint
         get() {
             val size = viewportSize
             if (size.width <= 0f || size.height <= 0f) return GeoPoint(0.0, 0.0)
@@ -115,17 +118,17 @@ class PlaneMapState(
     /** True after an animated double-tap zoom-in; next double-tap zooms back out. */
     private var doubleTapZoomedIn: Boolean = false
     private var doubleTapBaselineZoom: Float = initialZoom.coerceIn(minZoom, maxZoom)
-    private var zoomAnimationJob: Job? = null
+    private var cameraAnimationJob: Job? = null
 
     fun zoomIn(factor: Float = 1.25f) {
-        cancelZoomAnimation()
+        cancelCameraAnimation()
         zoom = (zoom * factor).coerceIn(minZoom, maxZoom)
         clampVerticalOffset()
         doubleTapZoomedIn = false
     }
 
     fun zoomOut(factor: Float = 1.25f) {
-        cancelZoomAnimation()
+        cancelCameraAnimation()
         zoom = (zoom / factor).coerceIn(minZoom, maxZoom)
         clampVerticalOffset()
         doubleTapZoomedIn = false
@@ -136,13 +139,14 @@ class PlaneMapState(
      * (viewport pixels) fixed on screen.
      */
     override fun zoomAt(focalX: Float, focalY: Float, factor: Float) {
-        cancelZoomAnimation()
+        cancelCameraAnimation()
         applyZoomAt(focalX, focalY, factor)
         doubleTapZoomedIn = false
     }
 
     /** Pan in screen pixels (converted to map space). */
     override fun panBy(deltaX: Float, deltaY: Float) {
+        cancelCameraAnimation()
         if (zoom == 0f) return
         // offsetY is scaled by [zoom] in the projection (pivot frame), not zoomY.
         offsetX += deltaX / zoom
@@ -157,8 +161,59 @@ class PlaneMapState(
      * (that would break Natural Earth seams). If the viewport size is not known
      * yet, the camera center is applied as soon as it becomes available.
      */
-    fun setCenter(point: GeoPoint) {
-        cancelZoomAnimation()
+    override fun moveTo(point: GeoPoint) {
+        moveTo(point, zoom)
+    }
+
+    override fun moveTo(point: GeoPoint, zoom: Float) {
+        cancelCameraAnimation()
+        applyCamera(point, zoom)
+    }
+
+    /** @see moveTo */
+    fun setCenter(point: GeoPoint) = moveTo(point)
+
+    override suspend fun animateTo(point: GeoPoint) {
+        animateTo(point, zoom, DefaultCameraAnimationSpec)
+    }
+
+    override suspend fun animateTo(
+        point: GeoPoint,
+        animationSpec: AnimationSpec<Float>,
+    ) {
+        animateTo(point, zoom, animationSpec)
+    }
+
+    override suspend fun animateTo(point: GeoPoint, zoom: Float) {
+        animateTo(point, zoom, DefaultCameraAnimationSpec)
+    }
+
+    override suspend fun animateTo(
+        point: GeoPoint,
+        zoom: Float,
+        animationSpec: AnimationSpec<Float>,
+    ) {
+        coroutineScope {
+            cameraAnimationJob?.cancel()
+            val job = launch {
+                val startCenter = cameraCenter
+                val startZoom = this@PlaneMapState.zoom
+                val endZoom = zoom.coerceIn(minZoom, maxZoom)
+                animateCameraTransition(
+                    startCenter = startCenter,
+                    endCenter = point,
+                    startZoom = startZoom,
+                    endZoom = endZoom,
+                    animationSpec = animationSpec,
+                ) { center, z -> applyCamera(center, z) }
+            }
+            cameraAnimationJob = job
+            job.join()
+        }
+    }
+
+    private fun applyCamera(point: GeoPoint, targetZoom: Float) {
+        this.zoom = targetZoom.coerceIn(minZoom, maxZoom)
         pendingCenter = point
         applyCameraCenter(point)
         doubleTapZoomedIn = false
@@ -216,7 +271,7 @@ class PlaneMapState(
     }
 
     fun reset() {
-        cancelZoomAnimation()
+        cancelCameraAnimation()
         zoom = 1.0f
         offsetX = 0f
         offsetY = 0f
@@ -234,7 +289,7 @@ class PlaneMapState(
      */
     override suspend fun animateDoubleTapZoom(focalX: Float, focalY: Float) {
         coroutineScope {
-            zoomAnimationJob?.cancel()
+            cameraAnimationJob?.cancel()
             val job = launch {
                 val targetZoom = if (doubleTapZoomedIn) {
                     doubleTapBaselineZoom
@@ -246,7 +301,7 @@ class PlaneMapState(
                 animateZoomTo(focalX, focalY, targetZoom)
                 doubleTapZoomedIn = zoomingIn && zoom > doubleTapBaselineZoom + 0.01f
             }
-            zoomAnimationJob = job
+            cameraAnimationJob = job
             job.join()
         }
     }
@@ -327,9 +382,9 @@ class PlaneMapState(
         offsetY = (sY - cy - warpedDelta * zoom * scale) / zoom
     }
 
-    private fun cancelZoomAnimation() {
-        zoomAnimationJob?.cancel()
-        zoomAnimationJob = null
+    private fun cancelCameraAnimation() {
+        cameraAnimationJob?.cancel()
+        cameraAnimationJob = null
     }
 
     internal fun normalizeHorizontalOffset() {

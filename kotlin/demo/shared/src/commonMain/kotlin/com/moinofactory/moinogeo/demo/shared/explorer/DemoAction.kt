@@ -45,4 +45,7 @@ internal sealed class DemoAction {
 
     data class InspectCountry(val country: Country) : DemoAction()
     data object DismissCountryDetail : DemoAction()
+    /** Fly the map camera to [country] and highlight it. */
+    data class GoToCountry(val country: Country) : DemoAction()
+    data object ConsumeCameraRequest : DemoAction()
 }

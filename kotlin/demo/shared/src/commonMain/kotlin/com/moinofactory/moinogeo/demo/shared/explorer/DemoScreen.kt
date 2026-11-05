@@ -70,7 +70,7 @@ internal fun DemoScreenContent(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "Geo explorer demo",
+                            text = "Demo",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -168,6 +168,7 @@ internal fun DemoScreenContent(
         FlagDetailDialog(
             country = country,
             onDismiss = { onAction(DemoAction.DismissCountryDetail) },
+            onGoTo = { onAction(DemoAction.GoToCountry(country)) },
         )
     }
 }
@@ -188,6 +189,8 @@ private fun ExpandedDemoLayout(
             azimuthalSettings = state.azimuthalMapSettings,
             sphereSettings = state.sphereMapSettings,
             styleSettings = state.mapStyleSettings,
+            cameraRequest = state.cameraRequest,
+            onCameraRequestConsumed = { onAction(DemoAction.ConsumeCameraRequest) },
             onSelectMode = { onAction(DemoAction.SelectMapMode(it)) },
             onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
             onOpenMapStyleSettings = { onAction(DemoAction.OpenMapStyleSettings) },
@@ -214,6 +217,7 @@ private fun ExpandedDemoLayout(
                 selectedLibrary = state.selectedLibrary,
                 selectedViewMode = state.selectedViewMode,
                 onCountryClick = { onAction(DemoAction.InspectCountry(it)) },
+                onCountryGoTo = { onAction(DemoAction.GoToCountry(it)) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -245,6 +249,8 @@ private fun CompactDemoLayout(
             azimuthalSettings = state.azimuthalMapSettings,
             sphereSettings = state.sphereMapSettings,
             styleSettings = state.mapStyleSettings,
+            cameraRequest = state.cameraRequest,
+            onCameraRequestConsumed = { onAction(DemoAction.ConsumeCameraRequest) },
             onSelectMode = { onAction(DemoAction.SelectMapMode(it)) },
             onOpenMapSettings = { onAction(DemoAction.OpenMapSettings) },
             onOpenMapStyleSettings = { onAction(DemoAction.OpenMapStyleSettings) },

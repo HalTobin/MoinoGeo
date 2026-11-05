@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.GeoPolygon
+import com.moinofactory.moinogeo.maps.core.wrapDeltaDegrees
+import com.moinofactory.moinogeo.maps.core.wrapLongitudeDegrees
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.ceil

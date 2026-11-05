@@ -122,6 +122,35 @@ class PlaneMapStateTest {
     }
 
     @Test
+    fun moveToSnapsCenter() {
+        val state = PlaneMapState(initialZoom = 2f)
+        state.viewportSize = Size(360f, 180f)
+        // Equator target keeps zoom untouched (no vertical-room bump).
+        state.moveTo(GeoPoint(latitude = 0.0, longitude = -60.0))
+        assertEquals(0.0, state.cameraCenter.latitude, absoluteTolerance = 1e-3)
+        assertEquals(-60.0, state.cameraCenter.longitude, absoluteTolerance = 1e-3)
+        assertEquals(2f, state.zoom)
+    }
+
+    @Test
+    fun moveToWithZoomSnapsCenterAndZoom() {
+        val state = PlaneMapState(initialZoom = 1f, maxZoom = 8f)
+        state.viewportSize = Size(360f, 180f)
+        state.moveTo(GeoPoint(latitude = 0.0, longitude = 40.0), zoom = 3f)
+        assertEquals(0.0, state.cameraCenter.latitude, absoluteTolerance = 1e-3)
+        assertEquals(40.0, state.cameraCenter.longitude, absoluteTolerance = 1e-3)
+        assertEquals(3f, state.zoom)
+    }
+
+    @Test
+    fun moveToClampsZoomToMax() {
+        val state = PlaneMapState(initialZoom = 1f, maxZoom = 4f)
+        state.viewportSize = Size(360f, 180f)
+        state.moveTo(GeoPoint(0.0, 0.0), zoom = 99f)
+        assertEquals(4f, state.zoom)
+    }
+
+    @Test
     fun verticalScalePivotsAroundCenterLatitude() {
         val state = PlaneMapState(
             initialZoom = 1f,

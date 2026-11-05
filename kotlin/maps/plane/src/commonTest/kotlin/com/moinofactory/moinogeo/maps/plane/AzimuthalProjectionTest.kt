@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.GeoPolygon
+import com.moinofactory.moinogeo.maps.core.wrapDeltaDegrees
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.hypot

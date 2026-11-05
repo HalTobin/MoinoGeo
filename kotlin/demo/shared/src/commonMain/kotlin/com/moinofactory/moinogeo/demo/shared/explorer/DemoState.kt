@@ -3,8 +3,10 @@ package com.moinofactory.moinogeo.demo.shared.explorer
 import androidx.compose.ui.graphics.Color
 import com.moinofactory.moinogeo.core.domain.model.Country
 import com.moinofactory.moinogeo.core.domain.model.GeoPlace
+import com.moinofactory.moinogeo.core.domain.model.GeoPlaceType
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
+import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.MapStyle
 import com.moinofactory.moinogeo.maps.core.TopoZone
 import com.moinofactory.moinogeo.maps.core.ZoneStyle
@@ -30,6 +32,9 @@ internal data class DemoState(
     val isSearching: Boolean = false,
     val selectedPlace: GeoPlace? = null,
 
+    /** One-shot fly-to consumed by [com.moinofactory.moinogeo.demo.shared.explorer.components.DemoMap]. */
+    val cameraRequest: MapCameraRequest? = null,
+
     val mapMode: DemoMapMode = DemoMapMode.Flat,
     val flatMapSettings: DemoMapSettings = DemoMapSettings.Standard,
     val azimuthalMapSettings: DemoMapSettings = DemoMapSettings.Linear,
@@ -43,6 +48,46 @@ internal data class DemoState(
             DemoMapMode.Sphere -> sphereMapSettings
         }
 }
+
+/** Animated camera fly-to issued by search / country Go To. */
+internal data class MapCameraRequest(
+    val id: Long,
+    val point: GeoPoint,
+    val zoom: Float,
+)
+
+internal fun GeoPlaceType.defaultCameraZoom(): Float = when (this) {
+    GeoPlaceType.REGION, GeoPlaceType.SUBREGION -> 2f
+    GeoPlaceType.COUNTRY -> 3.5f
+    GeoPlaceType.STATE -> 5.5f
+    GeoPlaceType.CITY -> 7.5f
+}
+
+internal fun GeoPlace.toCameraRequest(id: Long): MapCameraRequest? {
+    val lat = latitude ?: return null
+    val lon = longitude ?: return null
+    return MapCameraRequest(
+        id = id,
+        point = GeoPoint(latitude = lat, longitude = lon),
+        zoom = type.defaultCameraZoom(),
+    )
+}
+
+internal fun Country.toGeoPlace(): GeoPlace = GeoPlace(
+    type = GeoPlaceType.COUNTRY,
+    id = id,
+    name = name,
+    iso2 = iso2,
+    iso3 = iso3,
+    latitude = latitude,
+    longitude = longitude,
+    regionId = regionId,
+    subregionId = subregionId,
+    countryId = id,
+)
+
+internal fun Country.hasCoordinates(): Boolean =
+    latitude != null && longitude != null
 
 internal enum class DemoMapMode(
     val title: String,

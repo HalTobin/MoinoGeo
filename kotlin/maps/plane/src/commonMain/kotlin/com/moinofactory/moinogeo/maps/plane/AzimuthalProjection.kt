@@ -6,6 +6,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import com.moinofactory.moinogeo.maps.core.GeoPoint
+import com.moinofactory.moinogeo.maps.core.wrapLongitudeDegrees
 import kotlin.math.PI
 import kotlin.math.acos
 import kotlin.math.asin
@@ -335,20 +336,6 @@ internal data class AzimuthalProjection(
 }
 
 private fun wrapRadians(radians: Double): Double = atan2(sin(radians), cos(radians))
-
-internal fun wrapLongitudeDegrees(longitude: Double): Double {
-    var v = longitude % 360.0
-    if (v > 180.0) v -= 360.0
-    if (v < -180.0) v += 360.0
-    return v
-}
-
-internal fun wrapDeltaDegrees(delta: Double): Double {
-    var d = delta % 360.0
-    if (d > 180.0) d -= 360.0
-    if (d <= -180.0) d += 360.0
-    return d
-}
 
 /**
  * Allowed [AzimuthalMapState.offsetY] so the disk's vertical extent still covers

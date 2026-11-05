@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moinofactory.moinogeo.core.domain.model.Country
+import com.moinofactory.moinogeo.demo.shared.explorer.hasCoordinates
 import com.moinofactory.moinogeo.demo.shared.ui.DetailRow
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -29,7 +30,10 @@ import com.moinofactory.moinogeo.flags.FlagIcon
 internal fun FlagDetailDialog(
     country: Country,
     onDismiss: () -> Unit,
+    onGoTo: (() -> Unit)? = null,
 ) {
+    val goToAction = onGoTo.takeIf { country.hasCoordinates() }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -73,6 +77,13 @@ internal fun FlagDetailDialog(
                     country.capital?.let { DetailRow("Capital:", it) }
                     country.regionId?.let { DetailRow("Region id:", it.toString()) }
                     country.subregionId?.let { DetailRow("Subregion id:", it.toString()) }
+                }
+            }
+        },
+        dismissButton = goToAction?.let { goTo ->
+            {
+                TextButton(onClick = goTo) {
+                    Text("Go to")
                 }
             }
         },

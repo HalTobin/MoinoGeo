@@ -48,6 +48,7 @@ import com.moinofactory.moinogeo.core.domain.model.GeoPlaceType
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapMode
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapSettings
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapStyleSettings
+import com.moinofactory.moinogeo.demo.shared.explorer.MapCameraRequest
 import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
 import com.moinofactory.moinogeo.demo.shared.ui.icon.azimuthalMap
 import com.moinofactory.moinogeo.demo.shared.ui.icon.flatMap
@@ -69,6 +70,7 @@ import kotlin.math.roundToInt
 
 private val HighlightFill = Color(0x66FF6D00)
 private val HighlightBorder = Color(0xFFFF6D00)
+private val FlyToAnimationMillis = 800
 
 /**
  * Demo wrapper around [PlaneMap], [AzimuthalMap], and a Sphere placeholder using
@@ -86,6 +88,8 @@ internal fun DemoMap(
     styleSettings: DemoMapStyleSettings,
     onSelectMode: (DemoMapMode) -> Unit,
     modifier: Modifier = Modifier,
+    cameraRequest: MapCameraRequest? = null,
+    onCameraRequestConsumed: () -> Unit = {},
     onOpenMapSettings: (() -> Unit)? = null,
     onOpenMapStyleSettings: (() -> Unit)? = null,
 ) {
@@ -99,6 +103,13 @@ internal fun DemoMap(
 
     BindPlaneCamera(planeState, flatSettings)
     BindAzimuthalCamera(azimuthalState, azimuthalSettings)
+    AnimateCameraRequest(
+        request = cameraRequest,
+        mode = mode,
+        planeState = planeState,
+        azimuthalState = azimuthalState,
+        onConsumed = onCameraRequestConsumed,
+    )
 
     val selectedCountryFeature: BoundaryFeature? = remember(selectedPlace, boundaryData) {
         val place = selectedPlace ?: return@remember null
@@ -370,6 +381,37 @@ private val DemoMapMode.icon: ImageVector
         DemoMapMode.Azimuthal -> Icons.azimuthalMap
         DemoMapMode.Sphere -> Icons.sphereMap
     }
+
+@Composable
+private fun AnimateCameraRequest(
+    request: MapCameraRequest?,
+    mode: DemoMapMode,
+    planeState: PlaneMapState,
+    azimuthalState: AzimuthalMapState,
+    onConsumed: () -> Unit,
+) {
+    LaunchedEffect(request?.id, mode) {
+        val target = request ?: return@LaunchedEffect
+        val animationSpec = tween<Float>(
+            durationMillis = FlyToAnimationMillis,
+            easing = FastOutSlowInEasing,
+        )
+        when (mode) {
+            DemoMapMode.Flat -> planeState.animateTo(
+                point = target.point,
+                zoom = target.zoom,
+                animationSpec = animationSpec,
+            )
+            DemoMapMode.Azimuthal -> azimuthalState.animateTo(
+                point = target.point,
+                zoom = target.zoom,
+                animationSpec = animationSpec,
+            )
+            DemoMapMode.Sphere -> Unit
+        }
+        onConsumed()
+    }
+}
 
 @Composable
 private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {

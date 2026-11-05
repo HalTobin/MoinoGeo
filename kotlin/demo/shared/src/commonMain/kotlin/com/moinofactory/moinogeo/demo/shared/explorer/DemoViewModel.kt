@@ -3,6 +3,8 @@ package com.moinofactory.moinogeo.demo.shared.explorer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.moinofactory.moinogeo.core.domain.MoinoGeoService
+import com.moinofactory.moinogeo.core.domain.model.Country
+import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.demo.shared.data.sampleCountries
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.demo.shared.flags.FlagViewMode
@@ -29,6 +31,7 @@ internal class DemoViewModel(
     val state: StateFlow<DemoState> = _state.asStateFlow()
 
     private var searchJob: Job? = null
+    private var nextCameraRequestId = 0L
 
     init {
         loadCountries()
@@ -56,6 +59,7 @@ internal class DemoViewModel(
                         isSearchOpen = false,
                         isSearching = false,
                         searchQuery = action.place.name,
+                        cameraRequest = nextCameraRequest(action.place),
                     )
                 }
             }
@@ -68,6 +72,7 @@ internal class DemoViewModel(
                         isSearching = false,
                         isSearchOpen = false,
                         selectedPlace = null,
+                        cameraRequest = null,
                     )
                 }
             }
@@ -126,7 +131,27 @@ internal class DemoViewModel(
 
             is DemoAction.InspectCountry -> _state.update { it.copy(inspectedCountry = action.country) }
             DemoAction.DismissCountryDetail -> _state.update { it.copy(inspectedCountry = null) }
+            is DemoAction.GoToCountry -> goToCountry(action.country)
+            DemoAction.ConsumeCameraRequest -> _state.update { it.copy(cameraRequest = null) }
         }
+    }
+
+    private fun goToCountry(country: Country) {
+        val place = country.toGeoPlace()
+        _state.update {
+            it.copy(
+                selectedPlace = place,
+                searchQuery = country.name,
+                isSearchOpen = false,
+                inspectedCountry = null,
+                cameraRequest = nextCameraRequest(place),
+            )
+        }
+    }
+
+    private fun nextCameraRequest(place: GeoPlace): MapCameraRequest? {
+        val request = place.toCameraRequest(++nextCameraRequestId) ?: return null
+        return request
     }
 
     private fun updateActiveMap(transform: (DemoMapSettings) -> DemoMapSettings) {

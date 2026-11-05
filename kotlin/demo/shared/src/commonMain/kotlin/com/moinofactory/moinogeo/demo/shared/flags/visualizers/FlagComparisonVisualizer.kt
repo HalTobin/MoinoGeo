@@ -1,7 +1,6 @@
 package com.moinofactory.moinogeo.demo.shared.flags.visualizers
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moinofactory.moinogeo.core.domain.model.Country
+import com.moinofactory.moinogeo.demo.shared.flags.CountryContextClickable
 import com.moinofactory.moinogeo.demo.shared.flags.FlagLibraryType
 import com.moinofactory.moinogeo.flags.FlagIcon
 
@@ -36,6 +36,7 @@ import com.moinofactory.moinogeo.flags.FlagIcon
 internal fun FlagComparisonVisualizer(
     countries: List<Country>,
     onCountryClick: (Country) -> Unit,
+    onCountryGoTo: (Country) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -43,54 +44,61 @@ internal fun FlagComparisonVisualizer(
         modifier = modifier.fillMaxSize(),
     ) {
         items(countries) { country ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCountryClick(country) },
+            CountryContextClickable(
+                country = country,
+                onClick = { onCountryClick(country) },
+                onGoTo = { onCountryGoTo(country) },
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = "${country.name} (${country.iso2})",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "${country.name} (${country.iso2})",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        FlagLibraryType.entries.forEach { library ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .size(56.dp, 40.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.surface,
-                                            RoundedCornerShape(6.dp),
-                                        )
-                                        .padding(2.dp),
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            FlagLibraryType.entries.forEach { library ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.weight(1f),
                                 ) {
-                                    FlagIcon(
-                                        iso2Code = country.iso2,
-                                        provider = library.getProvider(),
-                                        modifier = Modifier.size(48.dp, 34.dp),
-                                        fallback = library.getFallbackData(),
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .size(56.dp, 40.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.surface,
+                                                RoundedCornerShape(6.dp),
+                                            )
+                                            .padding(2.dp),
+                                    ) {
+                                        FlagIcon(
+                                            iso2Code = country.iso2,
+                                            provider = library.getProvider(),
+                                            modifier = Modifier.size(48.dp, 34.dp),
+                                            fallback = library.getFallbackData(),
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = library.shortName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = library.shortName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
                             }
                         }
                     }
