@@ -47,6 +47,7 @@ import com.moinofactory.moinogeo.core.domain.model.GeoPlace
 import com.moinofactory.moinogeo.core.domain.model.GeoPlaceType
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapMode
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapSettings
+import com.moinofactory.moinogeo.demo.shared.explorer.DemoSphereSettings
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapStyleSettings
 import com.moinofactory.moinogeo.demo.shared.explorer.MapCameraRequest
 import com.moinofactory.moinogeo.demo.shared.ui.icon.Icons
@@ -65,11 +66,9 @@ import com.moinofactory.moinogeo.maps.plane.PlaneMap
 import com.moinofactory.moinogeo.maps.plane.PlaneMapState
 import com.moinofactory.moinogeo.maps.plane.rememberAzimuthalMapState
 import com.moinofactory.moinogeo.maps.plane.rememberPlaneMapState
-import com.moinofactory.moinogeo.maps.sphere.SphereBackground
 import com.moinofactory.moinogeo.maps.sphere.SphereMap
 import com.moinofactory.moinogeo.maps.sphere.SphereMapScope
 import com.moinofactory.moinogeo.maps.sphere.SphereMapState
-import com.moinofactory.moinogeo.maps.sphere.SphereMapStyle
 import com.moinofactory.moinogeo.maps.sphere.rememberSphereMapState
 import com.moinofactory.moinogeo.maps.topography.DefaultTopographyProvider
 import kotlin.math.roundToInt
@@ -90,7 +89,7 @@ internal fun DemoMap(
     mode: DemoMapMode,
     flatSettings: DemoMapSettings,
     azimuthalSettings: DemoMapSettings,
-    sphereSettings: DemoMapSettings,
+    sphereSettings: DemoSphereSettings,
     styleSettings: DemoMapStyleSettings,
     onSelectMode: (DemoMapMode) -> Unit,
     modifier: Modifier = Modifier,
@@ -110,7 +109,6 @@ internal fun DemoMap(
 
     BindPlaneCamera(planeState, flatSettings)
     BindAzimuthalCamera(azimuthalState, azimuthalSettings)
-    BindSphereCamera(sphereState, sphereSettings)
     AnimateCameraRequest(
         request = cameraRequest,
         mode = mode,
@@ -197,10 +195,7 @@ internal fun DemoMap(
                     DemoMapMode.Sphere -> SphereMap(
                         modifier = Modifier.fillMaxSize(),
                         mapStyle = mapStyle,
-                        sphereStyle = SphereMapStyle(
-                            mapStyle = mapStyle,
-                            background = SphereBackground.Solid(mapStyle.backgroundColor),
-                        ),
+                        sphereStyle = sphereSettings.toSphereMapStyle(mapStyle),
                         boundaryProvider = boundaryProvider,
                         topographyProvider = topographyProvider,
                         state = sphereState,
@@ -463,18 +458,6 @@ private fun BindAzimuthalCamera(state: AzimuthalMapState, settings: DemoMapSetti
     }
     LaunchedEffect(settings.centerLatitude, settings.centerLongitude) {
         state.setCenter(
-            GeoPoint(
-                latitude = settings.centerLatitude.toDouble(),
-                longitude = settings.centerLongitude.toDouble(),
-            ),
-        )
-    }
-}
-
-@Composable
-private fun BindSphereCamera(state: SphereMapState, settings: DemoMapSettings) {
-    LaunchedEffect(settings.centerLatitude, settings.centerLongitude) {
-        state.moveTo(
             GeoPoint(
                 latitude = settings.centerLatitude.toDouble(),
                 longitude = settings.centerLongitude.toDouble(),

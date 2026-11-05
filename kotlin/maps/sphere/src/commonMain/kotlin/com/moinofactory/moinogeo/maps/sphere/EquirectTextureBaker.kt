@@ -26,8 +26,9 @@ import kotlin.math.min
  * suitable as a Filament albedo on a UV sphere.
  */
 object EquirectTextureBaker {
-    const val DefaultWidth = 2048
-    const val DefaultHeight = 1024
+    /** High enough for close zoom; 8K-wide equirect is the practical ceiling for CPU bake. */
+    const val DefaultWidth = 4096
+    const val DefaultHeight = 2048
 
     fun bake(
         topography: TopographyData,
@@ -224,7 +225,8 @@ private fun isCutEdge(a: GeoPoint, b: GeoPoint): Boolean {
 }
 
 private fun GeoPoint.toEquirectOffset(width: Int, height: Int): Offset {
-    val x = ((longitude + 180.0) / 360.0 * width).toFloat()
+    // Mirror longitude so Filament's UV sphere (u increases with +θ) matches geographic east.
+    val x = ((180.0 - longitude) / 360.0 * width).toFloat()
     val y = ((90.0 - latitude) / 180.0 * height).toFloat()
     return Offset(
         x = min(width.toFloat(), max(0f, x)),

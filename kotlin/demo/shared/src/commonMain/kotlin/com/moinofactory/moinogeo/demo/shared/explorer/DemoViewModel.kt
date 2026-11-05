@@ -107,6 +107,31 @@ internal class DemoViewModel(
                 it.copy(rotationAngle = action.angle.coerceIn(-180f, 180f))
             }
 
+            is DemoAction.SetSphereBackgroundKind -> updateSphere {
+                it.copy(backgroundKind = action.kind)
+            }
+            is DemoAction.SetSphereSolidColor -> updateSphere {
+                it.copy(solidColor = action.color)
+            }
+            is DemoAction.SetSphereAuraEnabled -> updateSphere {
+                it.copy(auraEnabled = action.enabled)
+            }
+            is DemoAction.SetSphereAuraColor -> updateSphere {
+                it.copy(auraColor = action.color)
+            }
+            is DemoAction.SetSphereAuraIntensity -> updateSphere {
+                it.copy(auraIntensity = action.intensity.coerceIn(0f, 1f))
+            }
+            is DemoAction.SetSphereAuraThickness -> updateSphere {
+                it.copy(auraThickness = action.thickness.coerceIn(0.01f, 0.2f))
+            }
+            is DemoAction.SetSphereAuraBloom -> updateSphere {
+                it.copy(auraBloom = action.bloom.coerceIn(0f, 0.6f))
+            }
+            DemoAction.ResetSphereSettings -> _state.update {
+                it.copy(sphereSettings = DemoSphereSettings.Default)
+            }
+
             DemoAction.ResetMapStyleSettings -> _state.update {
                 it.copy(mapStyleSettings = DemoMapStyleSettings())
             }
@@ -160,8 +185,14 @@ internal class DemoViewModel(
             when (state.mapMode) {
                 DemoMapMode.Flat -> state.copy(flatMapSettings = updated)
                 DemoMapMode.Azimuthal -> state.copy(azimuthalMapSettings = updated)
-                DemoMapMode.Sphere -> state.copy(sphereMapSettings = updated)
+                DemoMapMode.Sphere -> state
             }
+        }
+    }
+
+    private fun updateSphere(transform: (DemoSphereSettings) -> DemoSphereSettings) {
+        _state.update { state ->
+            state.copy(sphereSettings = transform(state.sphereSettings))
         }
     }
 

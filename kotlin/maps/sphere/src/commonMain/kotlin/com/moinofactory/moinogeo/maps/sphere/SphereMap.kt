@@ -153,8 +153,8 @@ fun SphereMap(
             Sphere(
                 material = globeMaterial,
                 radius = mergedStyle.globeRadius,
-                rings = 48,
-                segments = 96,
+                rings = 64,
+                segments = 128,
             )
 
             if (mergedStyle.aura.enabled) {

@@ -10,6 +10,9 @@ import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.MapStyle
 import com.moinofactory.moinogeo.maps.core.TopoZone
 import com.moinofactory.moinogeo.maps.core.ZoneStyle
+import com.moinofactory.moinogeo.maps.sphere.SphereAura
+import com.moinofactory.moinogeo.maps.sphere.SphereBackground
+import com.moinofactory.moinogeo.maps.sphere.SphereMapStyle
 
 /**
  * Immutable UI state for [DemoScreen].
@@ -38,14 +41,14 @@ internal data class DemoState(
     val mapMode: DemoMapMode = DemoMapMode.Flat,
     val flatMapSettings: DemoMapSettings = DemoMapSettings.Standard,
     val azimuthalMapSettings: DemoMapSettings = DemoMapSettings.Linear,
-    val sphereMapSettings: DemoMapSettings = DemoMapSettings.Linear,
+    val sphereSettings: DemoSphereSettings = DemoSphereSettings(),
     val mapStyleSettings: DemoMapStyleSettings = DemoMapStyleSettings(),
 ) {
     val activeMapSettings: DemoMapSettings
         get() = when (mapMode) {
             DemoMapMode.Flat -> flatMapSettings
             DemoMapMode.Azimuthal -> azimuthalMapSettings
-            DemoMapMode.Sphere -> sphereMapSettings
+            DemoMapMode.Sphere -> DemoMapSettings.Linear
         }
 }
 
@@ -181,4 +184,42 @@ internal enum class DemoMapStylePreset(val title: String, val style: MapStyle) {
     Light("Light", MapStyle.Light),
     Dark("Dark", MapStyle.Dark),
     Satellite("Satellite", MapStyle.Satellite),
+}
+
+internal enum class DemoSphereBackgroundKind(val title: String) {
+    Starfield("Stars"),
+    Solid("Solid color"),
+}
+
+/** Sphere-only look controls (aura + backdrop). No stretch / center / rotation. */
+internal data class DemoSphereSettings(
+    val backgroundKind: DemoSphereBackgroundKind = DemoSphereBackgroundKind.Starfield,
+    val solidColor: Color = Color(0xFF02040A),
+    val auraEnabled: Boolean = true,
+    val auraColor: Color = Color(0x6688CCFF),
+    val auraIntensity: Float = 0.85f,
+    val auraThickness: Float = 0.06f,
+    val auraBloom: Float = 0.18f,
+) {
+    fun toSphereMapStyle(mapStyle: MapStyle): SphereMapStyle {
+        val background = when (backgroundKind) {
+            DemoSphereBackgroundKind.Starfield -> SphereBackground.Starfield()
+            DemoSphereBackgroundKind.Solid -> SphereBackground.Solid(solidColor)
+        }
+        return SphereMapStyle(
+            mapStyle = mapStyle,
+            background = background,
+            aura = SphereAura(
+                enabled = auraEnabled,
+                color = auraColor,
+                intensity = auraIntensity,
+                thickness = auraThickness,
+                bloomStrength = auraBloom,
+            ),
+        )
+    }
+
+    companion object {
+        val Default = DemoSphereSettings()
+    }
 }

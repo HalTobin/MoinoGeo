@@ -83,7 +83,8 @@ class SphereMapState(
     fun orbitBy(deltaX: Float, deltaY: Float) {
         cancelCameraAnimation()
         val sensitivity = 0.25f * (distance / maxDistance).coerceIn(0.35f, 1.2f)
-        val dLon = -deltaX * sensitivity
+        // Drag right → content follows finger (look-at longitude increases).
+        val dLon = deltaX * sensitivity
         val dLat = deltaY * sensitivity
         center = GeoPoint(
             latitude = (center.latitude + dLat).coerceIn(-MaxLat, MaxLat),

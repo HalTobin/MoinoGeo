@@ -36,6 +36,15 @@ internal sealed class DemoAction {
     data class SetMapCenterLongitude(val longitude: Float) : DemoAction()
     data class SetMapRotationAngle(val angle: Float) : DemoAction()
 
+    data class SetSphereBackgroundKind(val kind: DemoSphereBackgroundKind) : DemoAction()
+    data class SetSphereSolidColor(val color: Color) : DemoAction()
+    data class SetSphereAuraEnabled(val enabled: Boolean) : DemoAction()
+    data class SetSphereAuraColor(val color: Color) : DemoAction()
+    data class SetSphereAuraIntensity(val intensity: Float) : DemoAction()
+    data class SetSphereAuraThickness(val thickness: Float) : DemoAction()
+    data class SetSphereAuraBloom(val bloom: Float) : DemoAction()
+    data object ResetSphereSettings : DemoAction()
+
     data object ResetMapStyleSettings : DemoAction()
     data class SelectMapStylePreset(val preset: DemoMapStylePreset) : DemoAction()
     data class SetMapShowBorders(val show: Boolean) : DemoAction()
