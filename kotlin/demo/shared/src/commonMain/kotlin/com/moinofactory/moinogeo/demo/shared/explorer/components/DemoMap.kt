@@ -65,6 +65,12 @@ import com.moinofactory.moinogeo.maps.plane.PlaneMap
 import com.moinofactory.moinogeo.maps.plane.PlaneMapState
 import com.moinofactory.moinogeo.maps.plane.rememberAzimuthalMapState
 import com.moinofactory.moinogeo.maps.plane.rememberPlaneMapState
+import com.moinofactory.moinogeo.maps.sphere.SphereBackground
+import com.moinofactory.moinogeo.maps.sphere.SphereMap
+import com.moinofactory.moinogeo.maps.sphere.SphereMapScope
+import com.moinofactory.moinogeo.maps.sphere.SphereMapState
+import com.moinofactory.moinogeo.maps.sphere.SphereMapStyle
+import com.moinofactory.moinogeo.maps.sphere.rememberSphereMapState
 import com.moinofactory.moinogeo.maps.topography.DefaultTopographyProvider
 import kotlin.math.roundToInt
 
@@ -73,8 +79,8 @@ private val HighlightBorder = Color(0xFFFF6D00)
 private val FlyToAnimationMillis = 800
 
 /**
- * Demo wrapper around [PlaneMap], [AzimuthalMap], and a Sphere placeholder using
- * bundled Natural Earth topography and countries. Each mode keeps its own camera.
+ * Demo wrapper around [PlaneMap], [AzimuthalMap], and [SphereMap] using bundled
+ * Natural Earth topography and countries. Each mode keeps its own camera.
  * The map fills the available canvas; stretch from [DemoMapSettings] is applied
  * through the projection, not by resizing the canvas.
  */
@@ -98,16 +104,19 @@ internal fun DemoMap(
     val boundaryData = remember(boundaryProvider) { boundaryProvider.getBoundaryData() }
     val planeState = rememberPlaneMapState()
     val azimuthalState = rememberAzimuthalMapState()
+    val sphereState = rememberSphereMapState()
     var clickedPoint by remember { mutableStateOf<GeoPoint?>(null) }
     var overlayClickLabel by remember { mutableStateOf<String?>(null) }
 
     BindPlaneCamera(planeState, flatSettings)
     BindAzimuthalCamera(azimuthalState, azimuthalSettings)
+    BindSphereCamera(sphereState, sphereSettings)
     AnimateCameraRequest(
         request = cameraRequest,
         mode = mode,
         planeState = planeState,
         azimuthalState = azimuthalState,
+        sphereState = sphereState,
         onConsumed = onCameraRequestConsumed,
     )
 
@@ -185,10 +194,31 @@ internal fun DemoMap(
                         )
                     }
 
-                    DemoMapMode.Sphere -> SphereMapPlaceholder(
+                    DemoMapMode.Sphere -> SphereMap(
                         modifier = Modifier.fillMaxSize(),
-                        backgroundColor = mapStyle.backgroundColor,
-                    )
+                        mapStyle = mapStyle,
+                        sphereStyle = SphereMapStyle(
+                            mapStyle = mapStyle,
+                            background = SphereBackground.Solid(mapStyle.backgroundColor),
+                        ),
+                        boundaryProvider = boundaryProvider,
+                        topographyProvider = topographyProvider,
+                        state = sphereState,
+                        onMapClick = { point ->
+                            clickedPoint = point
+                            overlayClickLabel = null
+                        },
+                    ) {
+                        SpherePlaceOverlays(
+                            selectedPlace = selectedPlace,
+                            selectedCountryFeature = selectedCountryFeature,
+                            markerPoint = markerPoint,
+                            onOverlayClick = { label, point ->
+                                overlayClickLabel = label
+                                clickedPoint = point
+                            },
+                        )
+                    }
                 }
 
                 if (onOpenMapStyleSettings != null) {
@@ -242,27 +272,7 @@ internal fun DemoMap(
     }
 }
 
-@Composable
-private fun SphereMapPlaceholder(
-    backgroundColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = backgroundColor,
-        ) {}
-        Text(
-            text = "3D SPHERE MAP",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
+
 
 @Composable
 private fun MapOverlayIconButton(
@@ -388,6 +398,7 @@ private fun AnimateCameraRequest(
     mode: DemoMapMode,
     planeState: PlaneMapState,
     azimuthalState: AzimuthalMapState,
+    sphereState: SphereMapState,
     onConsumed: () -> Unit,
 ) {
     LaunchedEffect(request?.id, mode) {
@@ -407,7 +418,11 @@ private fun AnimateCameraRequest(
                 zoom = target.zoom,
                 animationSpec = animationSpec,
             )
-            DemoMapMode.Sphere -> Unit
+            DemoMapMode.Sphere -> sphereState.animateTo(
+                point = target.point,
+                zoom = target.zoom,
+                animationSpec = animationSpec,
+            )
         }
         onConsumed()
     }
@@ -453,6 +468,56 @@ private fun BindAzimuthalCamera(state: AzimuthalMapState, settings: DemoMapSetti
                 longitude = settings.centerLongitude.toDouble(),
             ),
         )
+    }
+}
+
+@Composable
+private fun BindSphereCamera(state: SphereMapState, settings: DemoMapSettings) {
+    LaunchedEffect(settings.centerLatitude, settings.centerLongitude) {
+        state.moveTo(
+            GeoPoint(
+                latitude = settings.centerLatitude.toDouble(),
+                longitude = settings.centerLongitude.toDouble(),
+            ),
+        )
+    }
+}
+
+@Composable
+private fun SphereMapScope.SpherePlaceOverlays(
+    selectedPlace: GeoPlace?,
+    selectedCountryFeature: BoundaryFeature?,
+    markerPoint: GeoPoint?,
+    onOverlayClick: (label: String, point: GeoPoint?) -> Unit,
+) {
+    selectedCountryFeature?.let { feature ->
+        Area(
+            geometries = feature.geometries,
+            fillColor = HighlightFill,
+            borderColor = HighlightBorder,
+            borderWidth = 2.5f,
+            onClick = {
+                onOverlayClick(selectedPlace?.name ?: feature.isoCode, null)
+            },
+        )
+    }
+
+    if (markerPoint != null && selectedPlace != null) {
+        Marker(
+            position = markerPoint,
+            onClick = {
+                onOverlayClick(selectedPlace.name, markerPoint)
+            },
+        ) {
+            Text(
+                text = selectedPlace.name,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF212121),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

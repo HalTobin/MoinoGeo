@@ -21,11 +21,16 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.maps.core)
+            api(projects.maps.core)
+            api(projects.maps.countries)
+            api(projects.maps.topography)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.filament.compose)
+            implementation(libs.filament.utils)
         }
 
         commonTest.dependencies {

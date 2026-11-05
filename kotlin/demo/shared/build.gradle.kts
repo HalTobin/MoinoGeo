@@ -44,6 +44,7 @@ kotlin {
 
             api(projects.core)
             implementation(projects.maps.plane)
+            implementation(projects.maps.sphere)
             implementation(projects.flags.core)
             implementation(projects.flags.lipisFlagIconsRectangle)
             implementation(projects.flags.lipisFlagIconsSquare)

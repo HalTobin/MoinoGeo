@@ -1,5 +1,5 @@
 [versions]
-agp = "9.5.0"
+agp = "9.5.1"
 android-compileSdk = "37"
 android-minSdk = "24"
 android-targetSdk = "37"
@@ -36,6 +36,9 @@ core = "1.7.0"
 
 runtime = "1.11.0"
 savedstate = "1.4.0"
+
+# Filament KMP (Compose Multiplatform wrapper; pulls platform natives transitively)
+filament-kmp = "0.9.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -89,6 +92,9 @@ androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 androidx-savedstate = { group = "org.jetbrains.androidx.savedstate", name = "savedstate", version.ref = "savedstate" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-junit" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-espresso-core" }
+
+filament-compose = { module = "io.github.erkko68.filament:filament-compose", version.ref = "filament-kmp" }
+filament-utils = { module = "io.github.erkko68.filament:filament-utils", version.ref = "filament-kmp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
