@@ -373,18 +373,22 @@ private val DemoMapMode.icon: ImageVector
 
 @Composable
 private fun BindPlaneCamera(state: PlaneMapState, settings: DemoMapSettings) {
-    // Stretch lives on the projection so canvas size can change freely.
+    // Stretch / falloff live on the projection so canvas size can change freely.
+    // Flat map keeps equator pivot and no rotation.
+    LaunchedEffect(Unit) {
+        state.centerLatitude = 0.0
+        state.rotationAngle = 0f
+    }
     LaunchedEffect(settings.horizontalScale, settings.verticalScale) {
         state.verticalScale = settings.projectionVerticalScale()
     }
-    LaunchedEffect(settings.rotationAngle) {
-        state.rotationAngle = settings.rotationAngle
+    LaunchedEffect(settings.verticalWarp) {
+        state.verticalWarp = settings.verticalWarp
     }
-    LaunchedEffect(settings.centerLatitude, settings.centerLongitude) {
-        state.centerLatitude = settings.centerLatitude.toDouble()
+    LaunchedEffect(settings.centerLongitude) {
         state.setCenter(
             GeoPoint(
-                latitude = settings.centerLatitude.toDouble(),
+                latitude = 0.0,
                 longitude = settings.centerLongitude.toDouble(),
             ),
         )

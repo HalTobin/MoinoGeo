@@ -6,9 +6,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import com.moinofactory.moinogeo.maps.core.GeoPoint
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.asinh
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
+import kotlin.math.sinh
 
 /**
  * Equirectangular (Plate Carrée) projection.
@@ -21,13 +24,15 @@ import kotlin.math.sin
  * (pre-split on that meridian) remain valid. Camera centering uses [offsetX] /
  * [offsetY] via [PlaneMapState.setCenter], not a shifted central meridian.
  *
- * [verticalScale] is an aspect-ratio adjustment along Y (1f = classic
+ * [verticalScale] is a uniform aspect-ratio adjustment along Y (1f = classic
  * equirectangular with equal degrees-per-pixel on X and Y). Canvas aspect does
  * **not** distort geography: [geographicYFactor] compensates so a square or tall
- * viewport keeps the same proportions as a 2:1 one. It is **not** spherical
- * distortion centering: meridians stay parallel, and east-west stretch still
- * grows as sec(φ) toward the poles. [centerLatitude] only picks the latitude
- * that the Y stretch pivots around.
+ * viewport keeps the same proportions as a 2:1 one.
+ *
+ * [verticalWarp] adds a non-linear falloff away from [centerLatitude]: `0` keeps
+ * linear spacing, positive values stretch exponentially toward the poles
+ * (sinh curve), negative values do the inverse. Pole positions stay fixed so
+ * the world still fits the same vertical span.
  */
 @Immutable
 internal data class MapProjection(
@@ -36,6 +41,7 @@ internal data class MapProjection(
     val offsetX: Float,
     val offsetY: Float,
     val verticalScale: Float = 1f,
+    val verticalWarp: Float = 0f,
     val centerLatitude: Double = 0.0,
     val rotationAngle: Float = 0f,
 ) {
@@ -50,6 +56,10 @@ internal data class MapProjection(
     /** Map-Y of the vertical aspect-ratio pivot ([centerLatitude]). */
     val pivotY: Float
         get() = latitudeToMapY(centerLatitude, size.height)
+
+    /** Half-height used to normalize [verticalWarp] (pivot → farther pole). */
+    val warpReference: Float
+        get() = max(pivotY, size.height - pivotY).coerceAtLeast(1f)
 
     /** Screen position for [point] on world copy [tileX] (`0` = primary). */
     fun toOffsetOnTile(point: GeoPoint, tileX: Int): Offset {
@@ -105,8 +115,8 @@ internal data class MapProjection(
         }
 
         var mapX = (screenX - cx) / zoom - offsetX + cx
-        val mapY = pivot +
-            (screenY - cy - offsetY * zoom) / zY
+        val warpedDelta = (screenY - cy - offsetY * zoom) / zY
+        val mapY = pivot + unwarpVerticalDelta(warpedDelta, verticalWarp, warpReference)
         mapX = wrapInto(mapX, width)
         val longitude = mapXToLongitude(mapX, width)
         val latitude = mapYToLatitude(mapY, height).coerceIn(-90.0, 90.0)
@@ -142,17 +152,18 @@ internal data class MapProjection(
 
     /**
      * Vertical stretch pivots around [pivotY] ([centerLatitude]):
-     * distances from the pivot use [zoomY], while the pivot itself tracks
-     * with [zoom] + [offsetY] like the horizontal axis.
+     * distances from the pivot use [zoomY] after [verticalWarp], while the
+     * pivot itself tracks with [zoom] + [offsetY] like the horizontal axis.
      */
     internal fun mapToScreen(mapX: Float, mapY: Float): Offset {
         val cx = size.width / 2f
         val cy = size.height / 2f
         val pivot = pivotY
         val zY = zoomY
+        val warpedDelta = warpVerticalDelta(mapY - pivot, verticalWarp, warpReference)
 
         val uX = cx + (mapX - cx + offsetX) * zoom
-        val uY = cy + offsetY * zoom + (mapY - pivot) * zY
+        val uY = cy + offsetY * zoom + warpedDelta * zY
 
         if (rotationAngle == 0f) {
             return Offset(uX, uY)
@@ -176,6 +187,7 @@ internal data class MapProjection(
             offsetX = 0f,
             offsetY = 0f,
             verticalScale = 1f,
+            verticalWarp = 0f,
             centerLatitude = 0.0,
             rotationAngle = 0f,
         )
@@ -184,8 +196,38 @@ internal data class MapProjection(
 
         const val MinVerticalScale = 0.1f
 
+        /** Soft clamp for the non-linear vertical falloff slider. */
+        const val MinVerticalWarp = -3f
+        const val MaxVerticalWarp = 3f
+
         /** Natural equirectangular width:height (360°:180°). */
         const val GeographicAspectRatio = 2f
+
+        private const val WarpEpsilon = 1e-4f
+
+        /**
+         * Maps a map-space delta from the pivot through a sinh falloff.
+         * `warp = 0` is linear; `|delta| = reference` stays fixed so poles fit.
+         */
+        fun warpVerticalDelta(delta: Float, warp: Float, reference: Float): Float {
+            val k = warp.coerceIn(MinVerticalWarp, MaxVerticalWarp)
+            val h = reference.coerceAtLeast(1f)
+            if (abs(k) < WarpEpsilon) return delta
+            val t = (delta / h).toDouble()
+            val kd = k.toDouble()
+            return (h * sinh(kd * t) / sinh(kd)).toFloat()
+        }
+
+        /** Inverse of [warpVerticalDelta]. */
+        fun unwarpVerticalDelta(warped: Float, warp: Float, reference: Float): Float {
+            val k = warp.coerceIn(MinVerticalWarp, MaxVerticalWarp)
+            val h = reference.coerceAtLeast(1f)
+            if (abs(k) < WarpEpsilon) return warped
+            val kd = k.toDouble()
+            val maxArg = abs(sinh(kd))
+            val arg = ((warped / h).toDouble() * sinh(kd)).coerceIn(-maxArg, maxArg)
+            return (h * asinh(arg) / kd).toFloat()
+        }
 
         /**
          * Y compensation so equal degrees-per-pixel holds on a viewport of
@@ -236,6 +278,7 @@ internal fun wrapOffsetCentered(value: Float, period: Float): Float {
  *
  * [viewportWidth] participates only through [MapProjection.geographicYFactor]
  * so clamps stay consistent with canvas-independent proportions.
+ * [verticalWarp] keeps poles fixed, so it does not change these bounds.
  */
 internal fun verticalOffsetBounds(
     viewportWidth: Float,

@@ -31,6 +31,7 @@ internal sealed class DemoAction {
     data object ResetActiveMapSettings : DemoAction()
     data class SetMapHorizontalScale(val scale: Float) : DemoAction()
     data class SetMapVerticalScale(val scale: Float) : DemoAction()
+    data class SetMapVerticalWarp(val warp: Float) : DemoAction()
     data class SetMapCenterLatitude(val latitude: Float) : DemoAction()
     data class SetMapCenterLongitude(val longitude: Float) : DemoAction()
     data class SetMapRotationAngle(val angle: Float) : DemoAction()

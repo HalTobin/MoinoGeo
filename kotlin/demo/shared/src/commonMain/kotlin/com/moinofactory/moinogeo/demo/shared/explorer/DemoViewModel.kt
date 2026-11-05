@@ -89,6 +89,9 @@ internal class DemoViewModel(
             is DemoAction.SetMapVerticalScale -> updateActiveMap {
                 it.copy(verticalScale = action.scale.coerceIn(0.5f, 2.5f))
             }
+            is DemoAction.SetMapVerticalWarp -> updateActiveMap {
+                it.copy(verticalWarp = action.warp.coerceIn(-3f, 3f))
+            }
             is DemoAction.SetMapCenterLatitude -> updateActiveMap {
                 it.copy(centerLatitude = action.latitude.coerceIn(-90f, 90f))
             }

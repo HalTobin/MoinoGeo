@@ -155,6 +155,7 @@ internal fun DemoScreenContent(
             settings = state.activeMapSettings,
             onMapHorizontalScaleChange = { onAction(DemoAction.SetMapHorizontalScale(it)) },
             onMapVerticalScaleChange = { onAction(DemoAction.SetMapVerticalScale(it)) },
+            onMapVerticalWarpChange = { onAction(DemoAction.SetMapVerticalWarp(it)) },
             onMapCenterLatitudeChange = { onAction(DemoAction.SetMapCenterLatitude(it)) },
             onMapCenterLongitudeChange = { onAction(DemoAction.SetMapCenterLongitude(it)) },
             onMapRotationAngleChange = { onAction(DemoAction.SetMapRotationAngle(it)) },

@@ -24,6 +24,7 @@ class PlaneMapState(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     initialVerticalScale: Float = 1f,
+    initialVerticalWarp: Float = 0f,
     initialCenterLatitude: Double = 0.0,
     initialRotationAngle: Float = 0f,
     // 1f = full world width visible; below that we'd need overlapping tiles (EvenOdd artifacts).
@@ -47,6 +48,27 @@ class PlaneMapState(
         get() = _verticalScale
         set(value) {
             _verticalScale = value.coerceAtLeast(MapProjection.MinVerticalScale)
+            clampVerticalOffset()
+        }
+
+    private var _verticalWarp by mutableFloatStateOf(
+        initialVerticalWarp.coerceIn(
+            MapProjection.MinVerticalWarp,
+            MapProjection.MaxVerticalWarp,
+        ),
+    )
+
+    /**
+     * Non-linear vertical falloff from [centerLatitude]. `0` is linear;
+     * positive values stretch exponentially toward the poles.
+     */
+    var verticalWarp: Float
+        get() = _verticalWarp
+        set(value) {
+            _verticalWarp = value.coerceIn(
+                MapProjection.MinVerticalWarp,
+                MapProjection.MaxVerticalWarp,
+            )
             clampVerticalOffset()
         }
 
@@ -153,11 +175,17 @@ class PlaneMapState(
         val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
         val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale) *
             MapProjection.geographicYFactor(width, height)
+        val warpRef = maxOf(pivot, height - pivot).coerceAtLeast(1f)
+        val warpedDelta = MapProjection.warpVerticalDelta(
+            delta = mapY - pivot,
+            warp = verticalWarp,
+            reference = warpRef,
+        )
 
         offsetX = cx - mapX
-        var desiredOffsetY = -(mapY - pivot) * scale
+        var desiredOffsetY = -warpedDelta * scale
         ensureVerticalRoomForOffset(desiredOffsetY)
-        desiredOffsetY = -(mapY - pivot) * scale
+        desiredOffsetY = -warpedDelta * scale
         offsetY = desiredOffsetY
         normalizeHorizontalOffset()
         clampVerticalOffset()
@@ -193,6 +221,7 @@ class PlaneMapState(
         offsetX = 0f
         offsetY = 0f
         verticalScale = 1f
+        verticalWarp = 0f
         centerLatitude = 0.0
         rotationAngle = 0f
         doubleTapZoomedIn = false
@@ -275,6 +304,12 @@ class PlaneMapState(
         val pivot = MapProjection.latitudeToMapY(centerLatitude, height)
         val scale = verticalScale.coerceAtLeast(MapProjection.MinVerticalScale) *
             MapProjection.geographicYFactor(width, height)
+        val warpRef = maxOf(pivot, height - pivot).coerceAtLeast(1f)
+        val warpedDelta = MapProjection.warpVerticalDelta(
+            delta = mapY - pivot,
+            warp = verticalWarp,
+            reference = warpRef,
+        )
 
         var sX = screenX
         var sY = screenY
@@ -289,7 +324,7 @@ class PlaneMapState(
         }
 
         offsetX = (sX - cx) / zoom - mapX + cx
-        offsetY = (sY - cy - (mapY - pivot) * zoom * scale) / zoom
+        offsetY = (sY - cy - warpedDelta * zoom * scale) / zoom
     }
 
     private fun cancelZoomAnimation() {
@@ -324,6 +359,7 @@ class PlaneMapState(
             offsetX = offsetX,
             offsetY = offsetY,
             verticalScale = verticalScale,
+            verticalWarp = verticalWarp,
             centerLatitude = centerLatitude,
             rotationAngle = rotationAngle,
         )
@@ -340,6 +376,7 @@ fun rememberPlaneMapState(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     initialVerticalScale: Float = 1f,
+    initialVerticalWarp: Float = 0f,
     initialCenterLatitude: Double = 0.0,
     initialRotationAngle: Float = 0f,
     minZoom: Float = 1.0f,
@@ -351,6 +388,7 @@ fun rememberPlaneMapState(
             initialOffsetX = initialOffsetX,
             initialOffsetY = initialOffsetY,
             initialVerticalScale = initialVerticalScale,
+            initialVerticalWarp = initialVerticalWarp,
             initialCenterLatitude = initialCenterLatitude,
             initialRotationAngle = initialRotationAngle,
             minZoom = minZoom,

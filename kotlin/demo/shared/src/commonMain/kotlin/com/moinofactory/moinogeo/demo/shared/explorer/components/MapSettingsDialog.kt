@@ -28,12 +28,14 @@ internal fun MapSettingsDialog(
     settings: DemoMapSettings,
     onMapHorizontalScaleChange: (Float) -> Unit,
     onMapVerticalScaleChange: (Float) -> Unit,
+    onMapVerticalWarpChange: (Float) -> Unit,
     onMapCenterLatitudeChange: (Float) -> Unit,
     onMapCenterLongitudeChange: (Float) -> Unit,
     onMapRotationAngleChange: (Float) -> Unit,
     onReset: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val isFlat = mode == DemoMapMode.Flat
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("${mode.title} map") },
@@ -44,9 +46,17 @@ internal fun MapSettingsDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "These controls apply only to the ${mode.title} map. " +
-                        "Horizontal and vertical stretch distort the projection " +
-                        "inside the available canvas (base ${formatAspect(mode.baseAspectRatio)}).",
+                    text = if (isFlat) {
+                        "These controls apply only to the Flat map. " +
+                            "Uniform stretch changes aspect; vertical falloff " +
+                            "stretches exponentially away from the equator " +
+                            "(0 = linear)."
+                    } else {
+                        "These controls apply only to the ${mode.title} map. " +
+                            "Horizontal and vertical stretch distort the projection " +
+                            "inside the available canvas " +
+                            "(base ${formatAspect(mode.baseAspectRatio)})."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -65,19 +75,30 @@ internal fun MapSettingsDialog(
                     valueRange = 0.5f..2.5f,
                     onValueChange = onMapVerticalScaleChange,
                 )
+                if (isFlat) {
+                    MapSliderRow(
+                        label = "Vertical falloff",
+                        valueLabel = formatWarp(settings.verticalWarp),
+                        value = settings.verticalWarp,
+                        valueRange = -3f..3f,
+                        onValueChange = onMapVerticalWarpChange,
+                    )
+                }
                 Text(
                     text = "Effective aspect: ${formatAspect(settings.aspectRatio(mode.baseAspectRatio))}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
-                MapSliderRow(
-                    label = "Center latitude",
-                    valueLabel = "${(settings.centerLatitude * 10).roundToInt() / 10.0}°",
-                    value = settings.centerLatitude,
-                    valueRange = -90f..90f,
-                    onValueChange = onMapCenterLatitudeChange,
-                )
+                if (!isFlat) {
+                    MapSliderRow(
+                        label = "Center latitude",
+                        valueLabel = "${(settings.centerLatitude * 10).roundToInt() / 10.0}°",
+                        value = settings.centerLatitude,
+                        valueRange = -90f..90f,
+                        onValueChange = onMapCenterLatitudeChange,
+                    )
+                }
                 MapSliderRow(
                     label = "Center longitude",
                     valueLabel = "${(settings.centerLongitude * 10).roundToInt() / 10.0}°",
@@ -85,13 +106,15 @@ internal fun MapSettingsDialog(
                     valueRange = -180f..180f,
                     onValueChange = onMapCenterLongitudeChange,
                 )
-                MapSliderRow(
-                    label = "Rotation angle",
-                    valueLabel = "${settings.rotationAngle.roundToInt()}°",
-                    value = settings.rotationAngle,
-                    valueRange = -180f..180f,
-                    onValueChange = onMapRotationAngleChange,
-                )
+                if (!isFlat) {
+                    MapSliderRow(
+                        label = "Rotation angle",
+                        valueLabel = "${settings.rotationAngle.roundToInt()}°",
+                        value = settings.rotationAngle,
+                        valueRange = -180f..180f,
+                        onValueChange = onMapRotationAngleChange,
+                    )
+                }
             }
         },
         dismissButton = {
@@ -139,4 +162,9 @@ private fun MapSliderRow(
 private fun formatAspect(ratio: Float): String {
     val rounded = (ratio * 100).roundToInt() / 100.0
     return "$rounded:1"
+}
+
+private fun formatWarp(warp: Float): String {
+    val rounded = (warp * 100).roundToInt() / 100.0
+    return if (rounded == 0.0) "linear" else rounded.toString()
 }

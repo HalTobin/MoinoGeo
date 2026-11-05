@@ -55,6 +55,7 @@ fun PlaneMap(
             state.offsetX,
             state.offsetY,
             state.verticalScale,
+            state.verticalWarp,
             state.centerLatitude,
             state.rotationAngle,
         ) {
@@ -64,6 +65,7 @@ fun PlaneMap(
                 offsetX = state.offsetX,
                 offsetY = state.offsetY,
                 verticalScale = state.verticalScale,
+                verticalWarp = state.verticalWarp,
                 centerLatitude = state.centerLatitude,
                 rotationAngle = state.rotationAngle,
             )
@@ -76,6 +78,7 @@ fun PlaneMap(
                 offsetX = state.offsetX,
                 offsetY = state.offsetY,
                 verticalScale = state.verticalScale,
+                verticalWarp = state.verticalWarp,
                 centerLatitude = state.centerLatitude,
                 rotationAngle = state.rotationAngle,
             )

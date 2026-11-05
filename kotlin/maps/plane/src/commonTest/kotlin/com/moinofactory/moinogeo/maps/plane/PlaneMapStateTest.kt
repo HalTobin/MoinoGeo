@@ -23,6 +23,7 @@ class PlaneMapStateTest {
             initialOffsetX = 50f,
             initialOffsetY = 50f,
             initialVerticalScale = 1.5f,
+            initialVerticalWarp = 1.5f,
             initialCenterLatitude = 20.0,
         )
         state.viewportSize = Size(400f, 200f)
@@ -31,6 +32,7 @@ class PlaneMapStateTest {
         assertEquals(0f, state.offsetX)
         assertEquals(0f, state.offsetY)
         assertEquals(1.0f, state.verticalScale)
+        assertEquals(0f, state.verticalWarp)
         assertEquals(0.0, state.centerLatitude)
     }
 

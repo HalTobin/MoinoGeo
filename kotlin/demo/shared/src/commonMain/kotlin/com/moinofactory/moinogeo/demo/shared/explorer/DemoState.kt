@@ -58,6 +58,8 @@ internal enum class DemoMapMode(
 internal data class DemoMapSettings(
     val horizontalScale: Float = 1f,
     val verticalScale: Float = 1f,
+    /** Non-linear vertical falloff from center; `0` = linear (flat map only). */
+    val verticalWarp: Float = 0f,
     val centerLatitude: Float = 0f,
     val centerLongitude: Float = 0f,
     val rotationAngle: Float = 0f,

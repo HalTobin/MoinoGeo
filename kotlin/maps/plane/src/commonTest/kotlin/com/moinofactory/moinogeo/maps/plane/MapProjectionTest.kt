@@ -39,6 +39,50 @@ class MapProjectionTest {
     }
 
     @Test
+    fun verticalWarpKeepsPolesAndRoundTrips() {
+        val warped = projection.copy(verticalWarp = 2f)
+        val northPole = GeoPoint(90.0, 0.0)
+        val southPole = GeoPoint(-90.0, 0.0)
+        val mid = GeoPoint(45.0, 10.0)
+
+        assertEquals(
+            projection.toOffsetOnTile(northPole, 0).y,
+            warped.toOffsetOnTile(northPole, 0).y,
+            absoluteTolerance = 0.01f,
+        )
+        assertEquals(
+            projection.toOffsetOnTile(southPole, 0).y,
+            warped.toOffsetOnTile(southPole, 0).y,
+            absoluteTolerance = 0.01f,
+        )
+
+        // Positive warp gives more screen space near the poles, so mid-lats
+        // move closer to the equator on screen.
+        val baseMidY = projection.toOffsetOnTile(mid, 0).y
+        val warpedMidY = warped.toOffsetOnTile(mid, 0).y
+        assertTrue(warpedMidY > baseMidY)
+
+        val back = warped.toGeoPoint(warped.toOffset(mid))
+        assertEquals(mid.latitude, back.latitude, absoluteTolerance = 1e-4)
+        assertEquals(mid.longitude, back.longitude, absoluteTolerance = 1e-4)
+    }
+
+    @Test
+    fun verticalWarpZeroMatchesLinear() {
+        val delta = 40f
+        assertEquals(
+            delta,
+            MapProjection.warpVerticalDelta(delta, warp = 0f, reference = 90f),
+            absoluteTolerance = 1e-4f,
+        )
+        assertEquals(
+            delta,
+            MapProjection.unwarpVerticalDelta(delta, warp = 0f, reference = 90f),
+            absoluteTolerance = 1e-4f,
+        )
+    }
+
+    @Test
     fun canvasAspectDoesNotDistortEquirectangularProportions() {
         val square = MapProjection(
             size = Size(360f, 360f),
