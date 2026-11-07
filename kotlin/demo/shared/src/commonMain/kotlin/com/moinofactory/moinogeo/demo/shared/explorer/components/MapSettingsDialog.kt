@@ -270,7 +270,7 @@ private fun SphereSettingsContent(
             label = "Intensity",
             valueLabel = "${(settings.auraIntensity * 100).roundToInt()}%",
             value = settings.auraIntensity,
-            valueRange = 0.05f..1f,
+            valueRange = 0.05f..2f,
             onValueChange = onAuraIntensityChange,
         )
         MapSliderRow(

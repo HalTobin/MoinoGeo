@@ -196,10 +196,10 @@ internal data class DemoSphereSettings(
     val backgroundKind: DemoSphereBackgroundKind = DemoSphereBackgroundKind.Starfield,
     val solidColor: Color = Color(0xFF02040A),
     val auraEnabled: Boolean = true,
-    val auraColor: Color = Color(0x6688CCFF),
-    val auraIntensity: Float = 0.85f,
-    val auraThickness: Float = 0.06f,
-    val auraBloom: Float = 0.18f,
+    val auraColor: Color = Color(0xFF5EC8FF),
+    val auraIntensity: Float = 1f,
+    val auraThickness: Float = 0.04f,
+    val auraBloom: Float = 0.05f,
 ) {
     fun toSphereMapStyle(mapStyle: MapStyle): SphereMapStyle {
         val background = when (backgroundKind) {

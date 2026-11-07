@@ -31,6 +31,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.filament.compose)
             implementation(libs.filament.utils)
+            implementation(libs.filamat)
         }
 
         commonTest.dependencies {

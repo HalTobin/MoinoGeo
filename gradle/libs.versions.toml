@@ -95,6 +95,7 @@ androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core",
 
 filament-compose = { module = "io.github.erkko68.filament:filament-compose", version.ref = "filament-kmp" }
 filament-utils = { module = "io.github.erkko68.filament:filament-utils", version.ref = "filament-kmp" }
+filamat = { module = "io.github.erkko68.filament:filamat", version.ref = "filament-kmp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

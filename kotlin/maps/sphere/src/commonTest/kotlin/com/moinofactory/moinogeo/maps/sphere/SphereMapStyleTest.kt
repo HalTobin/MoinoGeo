@@ -19,8 +19,10 @@ class SphereMapStyleTest {
     @Test
     fun testDefaultAuraUsesSpaceTint() {
         val aura = SphereAura.Default
-        assertEquals(Color(0x6688CCFF), aura.color)
+        assertEquals(Color(0xFF5EC8FF), aura.color)
         assertTrue(aura.intensity > 0f)
         assertTrue(aura.thickness > 0f)
+        assertTrue(InnerAuraMaterial.payload().isNotEmpty())
+        assertTrue(OuterAuraMaterial.payload().isNotEmpty())
     }
 }

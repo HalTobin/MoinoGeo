@@ -40,7 +40,7 @@ import io.github.erkko68.filament.compose.scene.rememberCameraState
 import io.github.erkko68.filament.compose.scene.rememberColorMaterialInstance
 import io.github.erkko68.filament.compose.scene.rememberTexturedMaterialInstance
 import io.github.erkko68.filament.compose.scene.rememberTexture
-import io.github.erkko68.filament.compose.scene.rememberTransparentColorMaterialInstance
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -110,8 +110,12 @@ fun SphereMap(
         cameraState.projection = Projection.Perspective(fovDegrees = state.fieldOfView.toDouble())
     }
 
-    val bloom = if (mergedStyle.aura.enabled) {
-        Bloom(strength = mergedStyle.aura.bloomStrength * mergedStyle.aura.intensity)
+    val bloom = if (mergedStyle.aura.enabled && mergedStyle.aura.bloomStrength > 0.001f) {
+        Bloom(
+            strength = (mergedStyle.aura.bloomStrength * mergedStyle.aura.intensity)
+                .coerceIn(0f, 0.5f),
+            levels = 6,
+        )
     } else {
         null
     }
@@ -158,18 +162,37 @@ fun SphereMap(
             )
 
             if (mergedStyle.aura.enabled) {
-                val auraColor = LinearColor.fromComposeColor(
-                    mergedStyle.aura.color.copy(
-                        alpha = (mergedStyle.aura.color.alpha * mergedStyle.aura.intensity)
-                            .coerceIn(0.05f, 0.85f),
-                    ),
+                val auraThickness = mergedStyle.aura.thickness.coerceIn(0.01f, 0.25f)
+                val outerRadius = mergedStyle.globeRadius * (1f + auraThickness * 2.2f)
+
+                // Atmospheric outer glow halo radiating into space around the perimeter
+                val outerMaterial = rememberOuterAuraMaterialInstance(
+                    color = mergedStyle.aura.color,
+                    intensity = mergedStyle.aura.intensity,
+                    globeRadius = mergedStyle.globeRadius,
+                    outerRadius = outerRadius,
+                    thickness = auraThickness,
                 )
-                val auraMaterial = rememberTransparentColorMaterialInstance(auraColor)
                 Sphere(
-                    material = auraMaterial,
-                    radius = mergedStyle.globeRadius * (1f + mergedStyle.aura.thickness),
-                    rings = 32,
-                    segments = 64,
+                    material = outerMaterial,
+                    radius = outerRadius,
+                    rings = 64,
+                    segments = 128,
+                    castShadows = false,
+                    receiveShadows = false,
+                )
+
+                // Atmospheric inner rim glow along the globe silhouette
+                val innerMaterial = rememberInnerAuraMaterialInstance(
+                    color = mergedStyle.aura.color,
+                    intensity = mergedStyle.aura.intensity,
+                    thickness = auraThickness,
+                )
+                Sphere(
+                    material = innerMaterial,
+                    radius = mergedStyle.globeRadius * 1.001f,
+                    rings = 64,
+                    segments = 128,
                     castShadows = false,
                     receiveShadows = false,
                 )

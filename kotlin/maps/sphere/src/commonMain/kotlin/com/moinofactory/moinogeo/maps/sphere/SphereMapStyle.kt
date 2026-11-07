@@ -50,14 +50,22 @@ sealed class SphereBackground {
     data class Image(val bitmap: ImageBitmap) : SphereBackground()
 }
 
-/** Soft glow shell around the globe (transparent sphere + bloom). */
+/**
+ * Atmospheric glowing aura surrounding the globe at its edges:
+ * an outer halo radiating outward into space and an inner Fresnel rim along the silhouette,
+ * while leaving the face of the globe clean so map details remain sharp and visible.
+ *
+ * [thickness] controls the width/reach of the halo and rim falloff;
+ * [intensity] scales emission brightness;
+ * [bloomStrength] controls post-processing bloom intensity.
+ */
 @Immutable
 data class SphereAura(
     val enabled: Boolean = true,
-    val color: Color = Color(0x6688CCFF),
-    val intensity: Float = 0.85f,
-    val thickness: Float = 0.06f,
-    val bloomStrength: Float = 0.18f,
+    val color: Color = Color(0xFF5EC8FF),
+    val intensity: Float = 1f,
+    val thickness: Float = 0.04f,
+    val bloomStrength: Float = 0.05f,
 ) {
     companion object {
         val Default = SphereAura()
