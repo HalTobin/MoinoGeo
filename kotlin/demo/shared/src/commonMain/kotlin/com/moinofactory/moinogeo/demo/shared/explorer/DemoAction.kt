@@ -38,6 +38,10 @@ internal sealed class DemoAction {
 
     data class SetSphereBackgroundKind(val kind: DemoSphereBackgroundKind) : DemoAction()
     data class SetSphereSolidColor(val color: Color) : DemoAction()
+    data class SetSphereLightingKind(val kind: DemoSphereLightingKind) : DemoAction()
+    data class SetSphereSunLatitude(val latitude: Float) : DemoAction()
+    data class SetSphereSunLongitude(val longitude: Float) : DemoAction()
+    data class SetSphereSunAmbient(val ambient: Float) : DemoAction()
     data class SetSphereAuraEnabled(val enabled: Boolean) : DemoAction()
     data class SetSphereAuraColor(val color: Color) : DemoAction()
     data class SetSphereAuraIntensity(val intensity: Float) : DemoAction()

@@ -26,6 +26,7 @@ import io.github.erkko68.filament.compose.FilamentSceneScope
 import io.github.erkko68.filament.compose.FilamentSceneView
 import io.github.erkko68.filament.compose.scene.Bloom
 import io.github.erkko68.filament.compose.scene.Direction
+import io.github.erkko68.filament.compose.scene.DirectionalLight
 import io.github.erkko68.filament.compose.scene.IndirectLight
 import io.github.erkko68.filament.compose.scene.LightIntensity
 import io.github.erkko68.filament.compose.scene.LinearColor
@@ -34,12 +35,12 @@ import io.github.erkko68.filament.compose.scene.PostProcessing
 import io.github.erkko68.filament.compose.scene.Projection
 import io.github.erkko68.filament.compose.scene.Skybox
 import io.github.erkko68.filament.compose.scene.SphericalHarmonics
-import io.github.erkko68.filament.compose.scene.SunLight
 import io.github.erkko68.filament.compose.scene.primitives.Sphere
 import io.github.erkko68.filament.compose.scene.rememberCameraState
 import io.github.erkko68.filament.compose.scene.rememberColorMaterialInstance
 import io.github.erkko68.filament.compose.scene.rememberTexturedMaterialInstance
 import io.github.erkko68.filament.compose.scene.rememberTexture
+import io.github.erkko68.filament.compose.scene.rememberUnlitColorMaterialInstance
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -74,7 +75,14 @@ fun SphereMap(
     }
 
     val mergedStyle = remember(mapStyle, sphereStyle) {
-        sphereStyle.copy(mapStyle = mapStyle)
+        SphereMapStyle(
+            mapStyle = mapStyle,
+            globeRadius = sphereStyle.globeRadius,
+            fieldOfView = sphereStyle.fieldOfView,
+            background = sphereStyle.background,
+            aura = sphereStyle.aura,
+            lighting = sphereStyle.lighting,
+        )
     }
 
     var bakedGlobe by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -133,32 +141,55 @@ fun SphereMap(
         ) {
             SphereSceneBackground(mergedStyle.background, skyBitmap)
 
-            if (mergedStyle.enableLighting) {
-                IndirectLight(irradiance = SphericalHarmonics.Daylight)
-                SunLight(
-                    direction = Direction(0.35f, -0.85f, -0.4f),
-                    intensity = LightIntensity.Sun,
+            val lighting = mergedStyle.lighting
+            if (lighting is SphereLighting.Directional) {
+                val ambient = lighting.ambient.coerceIn(0f, 1f)
+                if (ambient > 0.001f) {
+                    // Isotropic fill so the night side stays faintly readable.
+                    IndirectLight(
+                        irradiance = UniformIrradiance,
+                        intensity = 30_000f * ambient,
+                    )
+                }
+                val sunStrength = lighting.intensity.coerceIn(0f, 5f)
+                DirectionalLight(
+                    direction = Direction(
+                        lighting.directionX,
+                        lighting.directionY,
+                        lighting.directionZ,
+                    ),
+                    intensity = LightIntensity.LuminousPower(100_000f * sunStrength),
+                    shadow = null,
                 )
-            } else {
-                IndirectLight(irradiance = SphericalHarmonics.NeutralStudio)
             }
 
             val fallbackColor = mapStyle.zoneStyles[TopoZone.WATER]?.fillColor
                 ?: mapStyle.backgroundColor
+            val fallbackLinear = LinearColor.fromComposeColor(fallbackColor)
             val globePng = remember(bakedGlobe) {
                 bakedGlobe?.encodeToPng()?.takeIf { it.isNotEmpty() }
             }
             val globeTexture = rememberTexture(key = globePng ?: Unit) {
                 globePng ?: ByteArray(0)
             }
-            val globeMaterial = rememberTexturedMaterialInstance(globeTexture)
-                ?: rememberColorMaterialInstance(LinearColor.fromComposeColor(fallbackColor))
+            val globeMaterial = when (mergedStyle.lighting) {
+                is SphereLighting.Uniform -> {
+                    rememberUnlitTexturedMaterialInstance(globeTexture)
+                        ?: rememberUnlitColorMaterialInstance(fallbackLinear)
+                }
+                is SphereLighting.Directional -> {
+                    rememberTexturedMaterialInstance(globeTexture, roughness = 1f)
+                        ?: rememberColorMaterialInstance(fallbackLinear, roughness = 1f)
+                }
+            }
 
             Sphere(
                 material = globeMaterial,
                 radius = mergedStyle.globeRadius,
                 rings = 64,
                 segments = 128,
+                castShadows = false,
+                receiveShadows = false,
             )
 
             if (mergedStyle.aura.enabled) {
@@ -268,3 +299,9 @@ private fun FilamentSceneScope.SphereSceneBackground(
         }
     }
 }
+
+/** Single-band (constant) irradiance — even fill with no directional bias. */
+private val UniformIrradiance = SphericalHarmonics(
+    bands = 1,
+    coefficients = floatArrayOf(1f, 1f, 1f),
+)

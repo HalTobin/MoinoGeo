@@ -3,7 +3,90 @@ package com.moinofactory.moinogeo.maps.sphere
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import com.moinofactory.moinogeo.maps.core.GeoPoint
 import com.moinofactory.moinogeo.maps.core.MapStyle
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+
+/**
+ * Globe illumination. Modes are mutually exclusive: either flat/unlit colour, or a single
+ * directional sun for day/night simulation.
+ */
+@Immutable
+sealed class SphereLighting {
+    /**
+     * Uniform self-illumination: the baked map texture is shown as-is with no shading,
+     * terminator, or shadows.
+     */
+    @Immutable
+    data object Uniform : SphereLighting()
+
+    /**
+     * Directional sunlight for day/night cycles. [directionX]/[directionY]/[directionZ] is the
+     * world-space travel direction of the light (Filament convention; need not be unit length).
+     *
+     * Prefer [over] when driving the sun from a geographic subsolar point.
+     *
+     * @param intensity Relative sun brightness (`1` ≈ daylight).
+     * @param ambient Soft fill on the night side (`0` = pure black night, `1` ≈ fully lit).
+     */
+    @Immutable
+    data class Directional(
+        val directionX: Float = 0.35f,
+        val directionY: Float = -0.85f,
+        val directionZ: Float = -0.4f,
+        val intensity: Float = 1f,
+        val ambient: Float = 0.12f,
+    ) : SphereLighting() {
+        companion object {
+            /**
+             * Sun directly overhead at [point] (degrees). Light travels from that side of the
+             * globe toward the origin, lighting the hemisphere around the subsolar point.
+             */
+            fun over(
+                point: GeoPoint,
+                intensity: Float = 1f,
+                ambient: Float = 0.12f,
+            ): Directional = over(
+                latitude = point.latitude,
+                longitude = point.longitude,
+                intensity = intensity,
+                ambient = ambient,
+            )
+
+            /** Sun directly overhead at [latitude]/[longitude] (degrees). */
+            fun over(
+                latitude: Double,
+                longitude: Double,
+                intensity: Float = 1f,
+                ambient: Float = 0.12f,
+            ): Directional {
+                val lat = latitude * DegToRad
+                val lon = longitude * DegToRad
+                val cosLat = cos(lat)
+                // Subsolar cartesian on the unit sphere (matches [SphereProjection.toCartesian]).
+                val px = (cosLat * cos(lon)).toFloat()
+                val py = sin(lat).toFloat()
+                val pz = (cosLat * sin(lon)).toFloat()
+                // Sunlight travels from the sun toward the globe centre.
+                return Directional(
+                    directionX = -px,
+                    directionY = -py,
+                    directionZ = -pz,
+                    intensity = intensity,
+                    ambient = ambient,
+                )
+            }
+        }
+    }
+
+    companion object {
+        val Default: SphereLighting = Uniform
+    }
+}
+
+private const val DegToRad = PI / 180.0
 
 /**
  * Sphere-specific look: shared [MapStyle] for topo/borders, plus scene background and aura.
@@ -12,10 +95,11 @@ import com.moinofactory.moinogeo.maps.core.MapStyle
 data class SphereMapStyle(
     val mapStyle: MapStyle = MapStyle.Default,
     val globeRadius: Float = 1f,
-    val enableLighting: Boolean = true,
     val fieldOfView: Float = 45f,
     val background: SphereBackground = SphereBackground.Starfield(),
     val aura: SphereAura = SphereAura.Default,
+    /** Exactly one lighting mode — uniform (default) or directional sun. Last for ABI safety. */
+    val lighting: SphereLighting = SphereLighting.Uniform,
 ) {
     companion object {
         /** Space backdrop with a soft atmospheric aura — the default globe look. */

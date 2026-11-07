@@ -12,6 +12,7 @@ import com.moinofactory.moinogeo.maps.core.TopoZone
 import com.moinofactory.moinogeo.maps.core.ZoneStyle
 import com.moinofactory.moinogeo.maps.sphere.SphereAura
 import com.moinofactory.moinogeo.maps.sphere.SphereBackground
+import com.moinofactory.moinogeo.maps.sphere.SphereLighting
 import com.moinofactory.moinogeo.maps.sphere.SphereMapStyle
 
 /**
@@ -191,7 +192,12 @@ internal enum class DemoSphereBackgroundKind(val title: String) {
     Solid("Solid color"),
 }
 
-/** Sphere-only look controls (aura + backdrop). No stretch / center / rotation. */
+internal enum class DemoSphereLightingKind(val title: String) {
+    Uniform("Uniform"),
+    Directional("Directional"),
+}
+
+/** Sphere-only look controls (aura + backdrop + lighting). No stretch / center / rotation. */
 internal data class DemoSphereSettings(
     val backgroundKind: DemoSphereBackgroundKind = DemoSphereBackgroundKind.Starfield,
     val solidColor: Color = Color(0xFF02040A),
@@ -200,11 +206,25 @@ internal data class DemoSphereSettings(
     val auraIntensity: Float = 1f,
     val auraThickness: Float = 0.04f,
     val auraBloom: Float = 0.05f,
+    val lightingKind: DemoSphereLightingKind = DemoSphereLightingKind.Uniform,
+    /** Subsolar latitude for directional day/night (degrees). */
+    val sunLatitude: Float = 23.5f,
+    /** Subsolar longitude for directional day/night (degrees). */
+    val sunLongitude: Float = 0f,
+    val sunAmbient: Float = 0.12f,
 ) {
     fun toSphereMapStyle(mapStyle: MapStyle): SphereMapStyle {
         val background = when (backgroundKind) {
             DemoSphereBackgroundKind.Starfield -> SphereBackground.Starfield()
             DemoSphereBackgroundKind.Solid -> SphereBackground.Solid(solidColor)
+        }
+        val lighting: SphereLighting = when (lightingKind) {
+            DemoSphereLightingKind.Directional -> SphereLighting.Directional.over(
+                latitude = sunLatitude.toDouble(),
+                longitude = sunLongitude.toDouble(),
+                ambient = sunAmbient,
+            )
+            DemoSphereLightingKind.Uniform -> SphereLighting.Uniform
         }
         return SphereMapStyle(
             mapStyle = mapStyle,
@@ -216,6 +236,7 @@ internal data class DemoSphereSettings(
                 thickness = auraThickness,
                 bloomStrength = auraBloom,
             ),
+            lighting = lighting,
         )
     }
 

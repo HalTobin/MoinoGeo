@@ -113,6 +113,18 @@ internal class DemoViewModel(
             is DemoAction.SetSphereSolidColor -> updateSphere {
                 it.copy(solidColor = action.color)
             }
+            is DemoAction.SetSphereLightingKind -> updateSphere {
+                it.copy(lightingKind = action.kind)
+            }
+            is DemoAction.SetSphereSunLatitude -> updateSphere {
+                it.copy(sunLatitude = action.latitude.coerceIn(-90f, 90f))
+            }
+            is DemoAction.SetSphereSunLongitude -> updateSphere {
+                it.copy(sunLongitude = action.longitude.coerceIn(-180f, 180f))
+            }
+            is DemoAction.SetSphereSunAmbient -> updateSphere {
+                it.copy(sunAmbient = action.ambient.coerceIn(0f, 1f))
+            }
             is DemoAction.SetSphereAuraEnabled -> updateSphere {
                 it.copy(auraEnabled = action.enabled)
             }

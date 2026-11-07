@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapMode
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoMapSettings
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoSphereBackgroundKind
+import com.moinofactory.moinogeo.demo.shared.explorer.DemoSphereLightingKind
 import com.moinofactory.moinogeo.demo.shared.explorer.DemoSphereSettings
 import kotlin.math.roundToInt
 
@@ -42,6 +43,10 @@ internal fun MapSettingsDialog(
     onApplyPreset: (DemoMapSettings) -> Unit,
     onSphereBackgroundKindChange: (DemoSphereBackgroundKind) -> Unit,
     onSphereSolidColorChange: (Color) -> Unit,
+    onSphereLightingKindChange: (DemoSphereLightingKind) -> Unit,
+    onSphereSunLatitudeChange: (Float) -> Unit,
+    onSphereSunLongitudeChange: (Float) -> Unit,
+    onSphereSunAmbientChange: (Float) -> Unit,
     onSphereAuraEnabledChange: (Boolean) -> Unit,
     onSphereAuraColorChange: (Color) -> Unit,
     onSphereAuraIntensityChange: (Float) -> Unit,
@@ -64,6 +69,10 @@ internal fun MapSettingsDialog(
                         settings = sphereSettings,
                         onBackgroundKindChange = onSphereBackgroundKindChange,
                         onSolidColorChange = onSphereSolidColorChange,
+                        onLightingKindChange = onSphereLightingKindChange,
+                        onSunLatitudeChange = onSphereSunLatitudeChange,
+                        onSunLongitudeChange = onSphereSunLongitudeChange,
+                        onSunAmbientChange = onSphereSunAmbientChange,
                         onAuraEnabledChange = onSphereAuraEnabledChange,
                         onAuraColorChange = onSphereAuraColorChange,
                         onAuraIntensityChange = onSphereAuraIntensityChange,
@@ -206,6 +215,10 @@ private fun SphereSettingsContent(
     settings: DemoSphereSettings,
     onBackgroundKindChange: (DemoSphereBackgroundKind) -> Unit,
     onSolidColorChange: (Color) -> Unit,
+    onLightingKindChange: (DemoSphereLightingKind) -> Unit,
+    onSunLatitudeChange: (Float) -> Unit,
+    onSunLongitudeChange: (Float) -> Unit,
+    onSunAmbientChange: (Float) -> Unit,
     onAuraEnabledChange: (Boolean) -> Unit,
     onAuraColorChange: (Color) -> Unit,
     onAuraIntensityChange: (Float) -> Unit,
@@ -213,12 +226,58 @@ private fun SphereSettingsContent(
     onAuraBloomChange: (Float) -> Unit,
 ) {
     Text(
-        text = "Sphere controls cover the backdrop and the atmospheric aura around the globe.",
+        text = "Sphere controls cover lighting, backdrop, and the atmospheric aura around the globe.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(modifier = Modifier.height(12.dp))
 
+    Text(text = "Lighting", style = MaterialTheme.typography.bodyMedium)
+    Spacer(modifier = Modifier.height(8.dp))
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        DemoSphereLightingKind.entries.forEach { kind ->
+            FilterChip(
+                selected = settings.lightingKind == kind,
+                onClick = { onLightingKindChange(kind) },
+                label = { Text(kind.title) },
+            )
+        }
+    }
+    if (settings.lightingKind == DemoSphereLightingKind.Directional) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Aim the sun by subsolar latitude / longitude for day–night cycles.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        MapSliderRow(
+            label = "Sun latitude",
+            valueLabel = "${settings.sunLatitude.roundToInt()}°",
+            value = settings.sunLatitude,
+            valueRange = -90f..90f,
+            onValueChange = onSunLatitudeChange,
+        )
+        MapSliderRow(
+            label = "Sun longitude",
+            valueLabel = "${settings.sunLongitude.roundToInt()}°",
+            value = settings.sunLongitude,
+            valueRange = -180f..180f,
+            onValueChange = onSunLongitudeChange,
+        )
+        MapSliderRow(
+            label = "Night ambient",
+            valueLabel = "${(settings.sunAmbient * 100).roundToInt()}%",
+            value = settings.sunAmbient,
+            valueRange = 0f..0.5f,
+            onValueChange = onSunAmbientChange,
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
     Text(text = "Background", style = MaterialTheme.typography.bodyMedium)
     Spacer(modifier = Modifier.height(8.dp))
     FlowRow(
